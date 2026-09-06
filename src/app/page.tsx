@@ -1,69 +1,253 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import React, { useState, useEffect, useCallback } from 'react';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { Header } from '@/components/layout/Header';
+import { DiscoveryConsole } from '@/components/discovery/DiscoveryConsole';
+import { WorkflowTerminal } from '@/components/discovery/WorkflowTerminal';
+import { ProductTable } from '@/components/discovery/ProductTable';
+import { ProductDetailModal } from '@/components/discovery/ProductDetailModal';
+import { WorkflowChatDrawer } from '@/components/chat/WorkflowChatDrawer';
+import { Product, WorkflowEvent } from '@/lib/db/store';
+
+export default function EcomOSDashboard() {
+  const [currentStage, setCurrentStage] = useState('01');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isApprovingId, setIsApprovingId] = useState<string | undefined>(undefined);
+
+  // Workflow Execution & Streaming State
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [logs, setLogs] = useState<WorkflowEvent[]>([]);
+
+  // System Stats
+  const [stats, setStats] = useState<any>(null);
+  const [providers, setProviders] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Load products & stats on mount
+  const loadData = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const [prodRes, statsRes] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/stats'),
+      ]);
+
+      if (prodRes.ok) {
+        const pData = await prodRes.json();
+        setProducts(pData.products || []);
+        setFilteredProducts(pData.products || []);
+      }
+
+      if (statsRes.ok) {
+        const sData = await statsRes.json();
+        setStats(sData.stats);
+        setProviders(sData.providers);
+      }
+    } catch (e) {
+      console.error('Failed to load dashboard data:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Client-side Filter Handling
+  const handleFilterChange = ({
+    query,
+    status,
+    minScore,
+  }: {
+    query: string;
+    status: string;
+    minScore: number;
+  }) => {
+    let result = [...products];
+
+    if (query) {
+      const q = query.toLowerCase();
+      result = result.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.category.toLowerCase().includes(q) ||
+          p.wow_factor.toLowerCase().includes(q)
+      );
+    }
+
+    if (status !== 'all') {
+      result = result.filter((p) => p.status === status);
+    }
+
+    if (minScore > 0) {
+      result = result.filter((p) => p.product_score >= minScore);
+    }
+
+    setFilteredProducts(result);
+  };
+
+  // Run Stage 01 Discovery with SSE Streaming
+  const handleRunWorkflow = async (niche: string, sources: string[]) => {
+    if (isRunning) return;
+
+    setIsRunning(true);
+    setProgress(5);
+    setLogs([
+      {
+        id: 'start',
+        timestamp: new Date().toLocaleTimeString(),
+        type: 'info',
+        stage: '01_PRODUCT_DISCOVERY',
+        message: `Đang kết nối tới Workflow Engine SSE endpoint cho thị trường: "${niche}"...`,
+      },
+    ]);
+
+    try {
+      const response = await fetch('/api/workflows/discovery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ niche, sources }),
+      });
+
+      if (!response.body) {
+        throw new Error('ReadableStream không được hỗ trợ bởi trình duyệt.');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const event: WorkflowEvent = JSON.parse(trimmed.slice(6));
+              setLogs((prev) => [...prev, event]);
+
+              if (event.type === 'search') {
+                setProgress(20);
+              } else if (event.type === 'found') {
+                setProgress(40);
+              } else if (event.type === 'ai_analyze') {
+                setProgress((prev) => Math.min(85, prev + 10));
+              } else if (event.type === 'score') {
+                setProgress((prev) => Math.min(95, prev + 5));
+                loadData(); // Update table dynamically as each item is scored
+              } else if (event.type === 'done') {
+                setProgress(100);
+              }
+            } catch (err) {
+              console.warn('Error parsing SSE event:', err);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: `err_${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString(),
+          type: 'error',
+          stage: '01_PRODUCT_DISCOVERY',
+          message: `Lỗi luồng: ${err?.message || 'Unknown stream error'}`,
+        },
+      ]);
+    } finally {
+      setIsRunning(false);
+      loadData();
+    }
+  };
+
+  // Human Approval Gate: Approve Product for Stage 02
+  const handleApproveProduct = async (productId: string) => {
+    setIsApprovingId(productId);
+    try {
+      const res = await fetch('/api/products', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: productId, status: 'approved_for_validation' }),
+      });
+
+      if (res.ok) {
+        await loadData();
+        if (selectedProduct?.id === productId) {
+          setSelectedProduct((prev) =>
+            prev ? { ...prev, status: 'approved_for_validation' } : null
+          );
+        }
+      }
+    } catch (e) {
+      console.error('Failed to approve product:', e);
+    } finally {
+      setIsApprovingId(undefined);
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
+    <div className="flex h-screen bg-[#08090d] text-slate-100 overflow-hidden">
+      {/* 12-Stage Pipeline Sidebar */}
+      <Sidebar
+        currentStage={currentStage}
+        onSelectStage={(stage) => setCurrentStage(stage)}
+        stats={stats}
+        providers={providers}
+      />
+
+      {/* Main Orchestration Canvas */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Header onRefresh={loadData} isRefreshing={isRefreshing} />
+
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {/* Stage 01 Console: Inputs & Triggers */}
+            <DiscoveryConsole
+              onRunWorkflow={handleRunWorkflow}
+              isRunning={isRunning}
+              onFilterChange={handleFilterChange}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+            {/* Manus/Claude Code style Real-time Event Stream */}
+            <WorkflowTerminal
+              logs={logs}
+              isRunning={isRunning}
+              progress={progress}
+            />
+
+            {/* Matrix Table of Discovered Products */}
+            <ProductTable
+              products={filteredProducts}
+              onSelectProduct={(p) => setSelectedProduct(p)}
+              onApproveProduct={handleApproveProduct}
+              isApprovingId={isApprovingId}
+            />
+          </div>
+        </main>
+      </div>
+
+      {/* Deep Dive & Economics Modal */}
+      <ProductDetailModal
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        onApprove={handleApproveProduct}
+        isApproving={isApprovingId === selectedProduct?.id}
+      />
+
+      {/* Embedded In-Workflow AI Chat Assistant */}
+      <WorkflowChatDrawer />
     </div>
   );
 }
