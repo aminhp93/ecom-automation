@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #09090b;
-  --foreground: #f4f4f5;
-  --surface: #121215;
-  --surface-border: #27272a;
+  --background: #fafafa;
+  --foreground: #09090b;
+  --surface: #ffffff;
+  --surface-border: #e4e4e7;
 }
 
 body {
@@ -14,7 +14,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Minimal subtle scrollbar */
+/* Minimal subtle scrollbar for light theme */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -25,10 +25,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #e4e4e7;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #d4d4d8;
 }

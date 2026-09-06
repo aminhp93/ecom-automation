@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Terminal, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Terminal, ChevronDown, ChevronUp } from 'lucide-react';
 import { WorkflowEvent } from '@/lib/db/store';
 
 interface WorkflowTerminalProps {
@@ -29,9 +29,9 @@ export const WorkflowTerminal: React.FC<WorkflowTerminalProps> = ({
   }
 
   return (
-    <div className="bg-[#0e0e11] border border-[#27272a] rounded-lg overflow-hidden mb-5">
+    <div className="bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden mb-5 shadow-sm text-white">
       {/* Terminal Title Bar */}
-      <div className="px-3.5 py-2 bg-[#141418] border-b border-[#27272a] flex items-center justify-between">
+      <div className="px-3.5 py-2 bg-zinc-900 border-b border-zinc-800 flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-mono text-zinc-300">
           <Terminal className="w-3.5 h-3.5 text-zinc-400" />
           <span>Workflow Console</span>
@@ -46,17 +46,17 @@ export const WorkflowTerminal: React.FC<WorkflowTerminalProps> = ({
 
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="p-1 rounded text-zinc-500 hover:text-zinc-200 transition-colors"
+          className="p-1 rounded text-zinc-400 hover:text-white transition-colors"
         >
           {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
       </div>
 
-      {/* Progress Bar (Minimal white/zinc) */}
+      {/* Progress Bar */}
       {isRunning && (
         <div className="w-full bg-zinc-900 h-1">
           <div
-            className="h-full bg-zinc-300 transition-all duration-200 ease-out"
+            className="h-full bg-white transition-all duration-200 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -64,7 +64,7 @@ export const WorkflowTerminal: React.FC<WorkflowTerminalProps> = ({
 
       {/* Terminal Output */}
       {isExpanded && (
-        <div className="p-3.5 font-mono text-xs max-h-56 overflow-y-auto space-y-1.5 bg-[#09090b]">
+        <div className="p-3.5 font-mono text-xs max-h-56 overflow-y-auto space-y-1.5 bg-zinc-950">
           {logs.map((log) => {
             return (
               <div key={log.id} className="flex items-start gap-2 leading-relaxed text-zinc-300">

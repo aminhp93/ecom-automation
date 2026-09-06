@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageSquare, Send, X, Bot, User, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, X, Bot, Loader2 } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -79,7 +79,7 @@ export const WorkflowChatDrawer: React.FC = () => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-5 right-5 z-40 px-3.5 py-2 rounded-full bg-white text-black font-medium text-xs flex items-center gap-1.5 shadow-xl hover:bg-zinc-200 transition-colors"
+          className="fixed bottom-5 right-5 z-40 px-3.5 py-2 rounded-full bg-black text-white font-medium text-xs flex items-center gap-1.5 shadow-lg hover:bg-zinc-800 transition-colors"
         >
           <MessageSquare className="w-3.5 h-3.5" />
           <span>AI Analyst</span>
@@ -88,17 +88,17 @@ export const WorkflowChatDrawer: React.FC = () => {
 
       {/* Minimal Chat Drawer */}
       {isOpen && (
-        <div className="fixed bottom-5 right-5 z-50 w-88 h-[460px] bg-[#0e0e11] border border-[#27272a] rounded-xl flex flex-col shadow-2xl overflow-hidden text-xs">
+        <div className="fixed bottom-5 right-5 z-50 w-88 h-[460px] bg-white border border-zinc-200 rounded-xl flex flex-col shadow-2xl overflow-hidden text-xs">
           {/* Header */}
-          <div className="px-4 py-2.5 bg-[#141418] border-b border-[#27272a] flex items-center justify-between">
+          <div className="px-4 py-2.5 bg-zinc-50 border-b border-zinc-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bot className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="font-medium text-zinc-200">AI Analyst</span>
+              <Bot className="w-3.5 h-3.5 text-zinc-600" />
+              <span className="font-semibold text-zinc-900">AI Analyst</span>
             </div>
 
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
+              className="p-1 rounded text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200 transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -114,21 +114,21 @@ export const WorkflowChatDrawer: React.FC = () => {
                   className={`flex gap-2 ${isBot ? 'items-start' : 'items-start flex-row-reverse'}`}
                 >
                   <div
-                    className={`p-2 rounded-lg max-w-[85%] leading-relaxed ${
+                    className={`p-2.5 rounded-lg max-w-[85%] leading-relaxed ${
                       isBot
-                        ? 'bg-[#18181b] border border-[#27272a] text-zinc-300'
-                        : 'bg-white text-black font-medium'
+                        ? 'bg-zinc-100 border border-zinc-200 text-zinc-800'
+                        : 'bg-black text-white font-medium'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{m.content}</p>
-                    <div className="text-[9px] text-zinc-500 mt-1 text-right">{m.timestamp}</div>
+                    <div className="text-[9px] text-zinc-400 mt-1 text-right">{m.timestamp}</div>
                   </div>
                 </div>
               );
             })}
 
             {isSending && (
-              <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] pl-1">
+              <div className="flex items-center gap-1.5 text-zinc-500 text-[11px] pl-1">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 <span>AI đang xử lý...</span>
               </div>
@@ -136,18 +136,18 @@ export const WorkflowChatDrawer: React.FC = () => {
           </div>
 
           {/* Input Box */}
-          <form onSubmit={handleSend} className="p-2.5 bg-[#141418] border-t border-[#27272a] flex gap-1.5">
+          <form onSubmit={handleSend} className="p-2.5 bg-zinc-50 border-t border-zinc-200 flex gap-1.5">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Nhập câu hỏi về sản phẩm..."
-              className="flex-1 bg-[#18181b] border border-[#27272a] rounded-md px-2.5 py-1 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+              className="flex-1 bg-white border border-zinc-200 rounded-md px-2.5 py-1 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-400"
             />
             <button
               type="submit"
               disabled={isSending || !input.trim()}
-              className="p-1.5 rounded-md bg-white text-black hover:bg-zinc-200 transition-colors disabled:opacity-40"
+              className="p-1.5 rounded-md bg-black text-white hover:bg-zinc-800 transition-colors disabled:opacity-40"
             >
               <Send className="w-3 h-3" />
             </button>
