@@ -2,7 +2,7 @@ import { AIProvider, AIRequest, AIResponse } from '../types';
 
 export class ClaudeProvider implements AIProvider {
   readonly name = 'claude' as const;
-  readonly defaultModel = 'claude-3-5-sonnet-20241022';
+  readonly defaultModel = 'claude-sonnet-4-5-20250929';
 
   isAvailable(): boolean {
     return !!process.env.ANTHROPIC_API_KEY;

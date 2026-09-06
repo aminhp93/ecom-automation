@@ -152,10 +152,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span>Gemini 3.6 Flash</span>
             <span className="text-[10px] text-zinc-500 font-mono">Free ($0.00)</span>
           </div>
-          <div className="flex items-center justify-between text-zinc-500">
-            <span>Claude 3.5 Sonnet</span>
-            <span className="text-[10px] font-mono">
-              {providers?.claude?.available ? 'Ready' : 'Standby'}
+          <div className="flex items-center justify-between text-zinc-800">
+            <span>Claude Sonnet 4.5</span>
+            <span className="text-[10px] font-mono font-medium text-zinc-900">
+              {providers?.claude?.available ? 'Active' : 'Standby'}
             </span>
           </div>
           <div className="flex items-center justify-between text-zinc-500">
