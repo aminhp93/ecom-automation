@@ -15,9 +15,10 @@ import { Stage03CompetitorView } from '@/components/stages/Stage03CompetitorView
 import { Stage04SupplierView } from '@/components/stages/Stage04SupplierView';
 import { Stage05OfferView } from '@/components/stages/Stage05OfferView';
 import { Stage06CreativeView } from '@/components/stages/Stage06CreativeView';
+import { AddCustomProductModal } from '@/components/discovery/AddCustomProductModal';
 
 import { Product, WorkflowEvent } from '@/lib/db/store';
-import { ChevronRight, Package, Sparkles } from 'lucide-react';
+import { ChevronRight, Package, Sparkles, Plus } from 'lucide-react';
 
 export default function EcomOSDashboard() {
   const [currentStage, setCurrentStage] = useState('01');
@@ -26,6 +27,7 @@ export default function EcomOSDashboard() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [activeWorkingProductId, setActiveWorkingProductId] = useState<string>('');
   const [isApprovingId, setIsApprovingId] = useState<string | undefined>(undefined);
+  const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
 
   // Workflow Execution & Streaming State
   const [isRunning, setIsRunning] = useState(false);
@@ -297,20 +299,31 @@ export default function EcomOSDashboard() {
         {/* Global Active Product Selector Bar (for Stage 02 and beyond) */}
         {currentStage !== '01' && (
           <div className="px-5 py-2.5 bg-white border-b border-zinc-200 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <Package className="w-3.5 h-3.5 text-zinc-400" />
-              <span className="text-zinc-500 font-medium">Sản phẩm đang chọn:</span>
-              <select
-                value={activeWorkingProductId}
-                onChange={(e) => setActiveWorkingProductId(e.target.value)}
-                className="bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium px-2 py-1 rounded focus:outline-none"
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Package className="w-3.5 h-3.5 text-zinc-400" />
+                <span className="text-zinc-500 font-medium">Sản phẩm đang chọn:</span>
+                <select
+                  value={activeWorkingProductId}
+                  onChange={(e) => setActiveWorkingProductId(e.target.value)}
+                  className="bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium px-2 py-1 rounded focus:outline-none"
+                >
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} {p.status === 'approved_for_validation' ? '✓ (Approved)' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsAddCustomOpen(true)}
+                className="px-2.5 py-1 rounded bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[11px] font-medium flex items-center gap-1 border border-zinc-200 transition"
               >
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.status === 'approved_for_validation' ? '✓ (Approved)' : ''}
-                  </option>
-                ))}
-              </select>
+                <Plus className="w-3 h-3" />
+                <span>+ Thêm sản phẩm mới</span>
+              </button>
             </div>
 
             <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
@@ -335,6 +348,7 @@ export default function EcomOSDashboard() {
                   onRunWorkflow={handleRunDiscovery}
                   isRunning={isRunning}
                   onFilterChange={handleFilterChange}
+                  onOpenAddCustom={() => setIsAddCustomOpen(true)}
                 />
                 <ProductTable
                   products={filteredProducts}
@@ -422,6 +436,19 @@ export default function EcomOSDashboard() {
         onClose={() => setSelectedProduct(null)}
         onApprove={handleApproveProduct}
         isApproving={isApprovingId === selectedProduct?.id}
+      />
+
+      {/* Add Custom Product Modal */}
+      <AddCustomProductModal
+        isOpen={isAddCustomOpen}
+        onClose={() => setIsAddCustomOpen(false)}
+        onProductCreated={(newProd) => {
+          setProducts((prev) => [newProd, ...prev]);
+          setFilteredProducts((prev) => [newProd, ...prev]);
+          setActiveWorkingProductId(newProd.id);
+          // Auto switch to Stage 02
+          setCurrentStage('02');
+        }}
       />
 
       {/* Embedded In-Workflow AI Chat Assistant */}

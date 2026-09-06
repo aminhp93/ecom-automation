@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Play, Loader2 } from 'lucide-react';
+import { Search, Play, Loader2, Plus } from 'lucide-react';
 
 interface DiscoveryConsoleProps {
   onRunWorkflow: (niche: string, sources: string[]) => void;
   isRunning: boolean;
   onFilterChange: (filters: { query: string; status: string; minScore: number }) => void;
+  onOpenAddCustom?: () => void;
 }
 
 const PRESET_NICHES = [
@@ -28,6 +29,7 @@ export const DiscoveryConsole: React.FC<DiscoveryConsoleProps> = ({
   onRunWorkflow,
   isRunning,
   onFilterChange,
+  onOpenAddCustom,
 }) => {
   const [niche, setNiche] = useState('Baby Products');
   const [selectedSources, setSelectedSources] = useState<string[]>([
@@ -82,27 +84,40 @@ export const DiscoveryConsole: React.FC<DiscoveryConsoleProps> = ({
             </p>
           </div>
 
-          <button
-            onClick={() => handleRun()}
-            disabled={isRunning || !niche.trim()}
-            className={`px-3.5 py-2 rounded-md font-medium text-xs flex items-center justify-center gap-2 transition-colors shrink-0 shadow-2xs ${
-              isRunning
-                ? 'bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed'
-                : 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900'
-            }`}
-          >
-            {isRunning ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Running Pipeline...</span>
-              </>
-            ) : (
-              <>
-                <Play className="w-3 h-3 fill-white" />
-                <span>Run Discovery</span>
-              </>
+          <div className="flex items-center gap-2">
+            {onOpenAddCustom && (
+              <button
+                type="button"
+                onClick={onOpenAddCustom}
+                className="px-3 py-2 rounded-md font-medium text-xs flex items-center gap-1.5 border border-zinc-200 bg-white text-zinc-800 hover:bg-zinc-50 shadow-2xs transition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Thêm Sản Phẩm Của Tôi</span>
+              </button>
             )}
-          </button>
+
+            <button
+              onClick={() => handleRun()}
+              disabled={isRunning || !niche.trim()}
+              className={`px-3.5 py-2 rounded-md font-medium text-xs flex items-center justify-center gap-2 transition-colors shrink-0 shadow-2xs ${
+                isRunning
+                  ? 'bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed'
+                  : 'bg-black text-white hover:bg-zinc-800 active:bg-zinc-900'
+              }`}
+            >
+              {isRunning ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Running Pipeline...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-3 h-3 fill-white" />
+                  <span>Run Discovery</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Niche Input & Source Selectors */}
