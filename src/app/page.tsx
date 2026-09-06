@@ -8,13 +8,23 @@ import { WorkflowTerminal } from '@/components/discovery/WorkflowTerminal';
 import { ProductTable } from '@/components/discovery/ProductTable';
 import { ProductDetailModal } from '@/components/discovery/ProductDetailModal';
 import { WorkflowChatDrawer } from '@/components/chat/WorkflowChatDrawer';
+
+// Stage Views
+import { Stage02ValidationView } from '@/components/stages/Stage02ValidationView';
+import { Stage03CompetitorView } from '@/components/stages/Stage03CompetitorView';
+import { Stage04SupplierView } from '@/components/stages/Stage04SupplierView';
+import { Stage05OfferView } from '@/components/stages/Stage05OfferView';
+import { Stage06CreativeView } from '@/components/stages/Stage06CreativeView';
+
 import { Product, WorkflowEvent } from '@/lib/db/store';
+import { ChevronRight, Package, Sparkles } from 'lucide-react';
 
 export default function EcomOSDashboard() {
   const [currentStage, setCurrentStage] = useState('01');
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [activeWorkingProductId, setActiveWorkingProductId] = useState<string>('');
   const [isApprovingId, setIsApprovingId] = useState<string | undefined>(undefined);
 
   // Workflow Execution & Streaming State
@@ -38,8 +48,15 @@ export default function EcomOSDashboard() {
 
       if (prodRes.ok) {
         const pData = await prodRes.json();
-        setProducts(pData.products || []);
-        setFilteredProducts(pData.products || []);
+        const list: Product[] = pData.products || [];
+        setProducts(list);
+        setFilteredProducts(list);
+
+        // Auto-select first approved product as default working product if none selected
+        if (list.length > 0) {
+          const approved = list.find((p) => p.status === 'approved_for_validation') || list[0];
+          setActiveWorkingProductId((prev) => prev || approved.id);
+        }
       }
 
       if (statsRes.ok) {
@@ -58,7 +75,9 @@ export default function EcomOSDashboard() {
     loadData();
   }, [loadData]);
 
-  // Client-side Filter Handling
+  const activeWorkingProduct = products.find((p) => p.id === activeWorkingProductId) || products[0] || null;
+
+  // Filter Handling for Stage 01
   const handleFilterChange = ({
     query,
     status,
@@ -92,7 +111,7 @@ export default function EcomOSDashboard() {
   };
 
   // Run Stage 01 Discovery with SSE Streaming
-  const handleRunWorkflow = async (niche: string, sources: string[]) => {
+  const handleRunDiscovery = async (niche: string, sources: string[]) => {
     if (isRunning) return;
 
     setIsRunning(true);
@@ -103,7 +122,7 @@ export default function EcomOSDashboard() {
         timestamp: new Date().toLocaleTimeString(),
         type: 'info',
         stage: '01_PRODUCT_DISCOVERY',
-        message: `Đang kết nối tới Workflow Engine SSE endpoint cho thị trường: "${niche}"...`,
+        message: `Đang kết nối tới Workflow Engine SSE cho thị trường: "${niche}"...`,
       },
     ]);
 
@@ -114,9 +133,7 @@ export default function EcomOSDashboard() {
         body: JSON.stringify({ niche, sources }),
       });
 
-      if (!response.body) {
-        throw new Error('ReadableStream không được hỗ trợ bởi trình duyệt.');
-      }
+      if (!response.body) throw new Error('SSE stream không hỗ trợ');
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder('utf-8');
@@ -137,18 +154,13 @@ export default function EcomOSDashboard() {
               const event: WorkflowEvent = JSON.parse(trimmed.slice(6));
               setLogs((prev) => [...prev, event]);
 
-              if (event.type === 'search') {
-                setProgress(20);
-              } else if (event.type === 'found') {
-                setProgress(40);
-              } else if (event.type === 'ai_analyze') {
-                setProgress((prev) => Math.min(85, prev + 10));
-              } else if (event.type === 'score') {
+              if (event.type === 'search') setProgress(25);
+              else if (event.type === 'found') setProgress(45);
+              else if (event.type === 'ai_analyze') setProgress((prev) => Math.min(85, prev + 10));
+              else if (event.type === 'score') {
                 setProgress((prev) => Math.min(95, prev + 5));
-                loadData(); // Update table dynamically as each item is scored
-              } else if (event.type === 'done') {
-                setProgress(100);
-              }
+                loadData();
+              } else if (event.type === 'done') setProgress(100);
             } catch (err) {
               console.warn('Error parsing SSE event:', err);
             }
@@ -172,6 +184,79 @@ export default function EcomOSDashboard() {
     }
   };
 
+  // Run Stages 02 -> 06/07 with Generic SSE Runner
+  const handleRunStage = async (stageNum: string) => {
+    if (isRunning || !activeWorkingProduct) return;
+
+    setIsRunning(true);
+    setProgress(10);
+    setLogs([
+      {
+        id: `start_stg_${stageNum}`,
+        timestamp: new Date().toLocaleTimeString(),
+        type: 'info',
+        stage: `STAGE_${stageNum}`,
+        message: `Khởi chạy Stage ${stageNum} cho sản phẩm: "${activeWorkingProduct.name}"...`,
+      },
+    ]);
+
+    try {
+      const response = await fetch('/api/workflows/run-stage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: activeWorkingProduct.id, stage: stageNum }),
+      });
+
+      if (!response.body) throw new Error('SSE stream không hỗ trợ');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            try {
+              const event: WorkflowEvent = JSON.parse(trimmed.slice(6));
+              setLogs((prev) => [...prev, event]);
+
+              if (event.type === 'search') setProgress(35);
+              else if (event.type === 'ai_analyze') setProgress(70);
+              else if (event.type === 'score') {
+                setProgress(95);
+                loadData();
+              } else if (event.type === 'done') setProgress(100);
+            } catch (err) {
+              console.warn('Error parsing SSE event:', err);
+            }
+          }
+        }
+      }
+    } catch (err: any) {
+      setLogs((prev) => [
+        ...prev,
+        {
+          id: `err_${Date.now()}`,
+          timestamp: new Date().toLocaleTimeString(),
+          type: 'error',
+          stage: `STAGE_${stageNum}`,
+          message: `Lỗi luồng: ${err?.message || 'Error'}`,
+        },
+      ]);
+    } finally {
+      setIsRunning(false);
+      loadData();
+    }
+  };
+
   // Human Approval Gate: Approve Product for Stage 02
   const handleApproveProduct = async (productId: string) => {
     setIsApprovingId(productId);
@@ -184,11 +269,9 @@ export default function EcomOSDashboard() {
 
       if (res.ok) {
         await loadData();
-        if (selectedProduct?.id === productId) {
-          setSelectedProduct((prev) =>
-            prev ? { ...prev, status: 'approved_for_validation' } : null
-          );
-        }
+        setActiveWorkingProductId(productId);
+        // Automatically take user to Stage 02
+        setCurrentStage('02');
       }
     } catch (e) {
       console.error('Failed to approve product:', e);
@@ -211,34 +294,129 @@ export default function EcomOSDashboard() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header onRefresh={loadData} isRefreshing={isRefreshing} />
 
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-7xl mx-auto space-y-6">
-            {/* Stage 01 Console: Inputs & Triggers */}
-            <DiscoveryConsole
-              onRunWorkflow={handleRunWorkflow}
-              isRunning={isRunning}
-              onFilterChange={handleFilterChange}
-            />
+        {/* Global Active Product Selector Bar (for Stage 02 and beyond) */}
+        {currentStage !== '01' && (
+          <div className="px-5 py-2.5 bg-white border-b border-zinc-200 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <Package className="w-3.5 h-3.5 text-zinc-400" />
+              <span className="text-zinc-500 font-medium">Sản phẩm đang chọn:</span>
+              <select
+                value={activeWorkingProductId}
+                onChange={(e) => setActiveWorkingProductId(e.target.value)}
+                className="bg-zinc-50 border border-zinc-200 text-zinc-900 font-medium px-2 py-1 rounded focus:outline-none"
+              >
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.status === 'approved_for_validation' ? '✓ (Approved)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            {/* Manus/Claude Code style Real-time Event Stream */}
+            <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
+              <span>Stage {currentStage} / 12</span>
+            </div>
+          </div>
+        )}
+
+        <main className="flex-1 overflow-y-auto p-5">
+          <div className="max-w-6xl mx-auto space-y-4">
+            {/* Realtime Terminal Console */}
             <WorkflowTerminal
               logs={logs}
               isRunning={isRunning}
               progress={progress}
             />
 
-            {/* Matrix Table of Discovered Products */}
-            <ProductTable
-              products={filteredProducts}
-              onSelectProduct={(p) => setSelectedProduct(p)}
-              onApproveProduct={handleApproveProduct}
-              isApprovingId={isApprovingId}
-            />
+            {/* STAGE 01: Product Discovery */}
+            {currentStage === '01' && (
+              <>
+                <DiscoveryConsole
+                  onRunWorkflow={handleRunDiscovery}
+                  isRunning={isRunning}
+                  onFilterChange={handleFilterChange}
+                />
+                <ProductTable
+                  products={filteredProducts}
+                  onSelectProduct={(p) => setSelectedProduct(p)}
+                  onApproveProduct={handleApproveProduct}
+                  isApprovingId={isApprovingId}
+                />
+              </>
+            )}
+
+            {/* STAGE 02: Product Validation */}
+            {currentStage === '02' && (
+              <Stage02ValidationView
+                product={activeWorkingProduct}
+                onRunStage={() => handleRunStage('02')}
+                isRunning={isRunning}
+                onProceedToNext={() => setCurrentStage('03')}
+              />
+            )}
+
+            {/* STAGE 03: Competitor Research */}
+            {currentStage === '03' && (
+              <Stage03CompetitorView
+                product={activeWorkingProduct}
+                onRunStage={() => handleRunStage('03')}
+                isRunning={isRunning}
+                onProceedToNext={() => setCurrentStage('04')}
+              />
+            )}
+
+            {/* STAGE 04: Supplier Validation */}
+            {currentStage === '04' && (
+              <Stage04SupplierView
+                product={activeWorkingProduct}
+                onRunStage={() => handleRunStage('04')}
+                isRunning={isRunning}
+                onProceedToNext={() => setCurrentStage('05')}
+              />
+            )}
+
+            {/* STAGE 05: Offer Creation (Claude Sonnet 4.5) */}
+            {currentStage === '05' && (
+              <Stage05OfferView
+                product={activeWorkingProduct}
+                onRunStage={() => handleRunStage('05')}
+                isRunning={isRunning}
+                onProceedToNext={() => setCurrentStage('06')}
+              />
+            )}
+
+            {/* STAGE 06/07: Creative & Store Page Engine (Claude Sonnet 4.5) */}
+            {(currentStage === '06' || currentStage === '07') && (
+              <Stage06CreativeView
+                product={activeWorkingProduct}
+                onRunStage={() => handleRunStage('06')}
+                isRunning={isRunning}
+              />
+            )}
+
+            {/* STAGES 08 - 12: Planned Future Stages */}
+            {['08', '09', '10', '11', '12'].includes(currentStage) && (
+              <div className="bg-white border border-zinc-200 rounded-lg p-12 text-center shadow-2xs space-y-2">
+                <Sparkles className="w-8 h-8 text-zinc-400 mx-auto" />
+                <h2 className="text-sm font-semibold text-zinc-900">
+                  Stage {currentStage}: Roadmap V2 & V3
+                </h2>
+                <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
+                  Giai đoạn này thuộc phần mở rộng (Meta Ads API Integration, Shopify Live Sync, và Autonomous Analytics Optimization) sau khi bạn hoàn tất kiểm thử bộ công cụ V1 (Stages 01 - 07).
+                </p>
+                <button
+                  onClick={() => setCurrentStage('01')}
+                  className="mt-3 px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-800 text-xs font-medium hover:bg-zinc-200 transition"
+                >
+                  Quay lại Stage 01
+                </button>
+              </div>
+            )}
           </div>
         </main>
       </div>
 
-      {/* Deep Dive & Economics Modal */}
+      {/* Product Detail Modal */}
       <ProductDetailModal
         product={selectedProduct}
         onClose={() => setSelectedProduct(null)}
