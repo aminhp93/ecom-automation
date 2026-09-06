@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Product } from '@/lib/db/store';
-import { ExternalLink, Check, Eye, DollarSign, TrendingUp, Sparkles } from 'lucide-react';
+import { Check, Eye } from 'lucide-react';
 
 interface ProductTableProps {
   products: Product[];
@@ -19,161 +19,138 @@ export const ProductTable: React.FC<ProductTableProps> = ({
 }) => {
   if (products.length === 0) {
     return (
-      <div className="bg-[#0e1017] border border-[#1c202e] rounded-xl p-12 text-center">
-        <div className="w-12 h-12 rounded-full bg-slate-800/60 border border-slate-700 flex items-center justify-center mx-auto mb-3 text-slate-400">
-          <Sparkles className="w-6 h-6" />
-        </div>
-        <h3 className="text-sm font-semibold text-slate-200">Chưa có sản phẩm nào phù hợp</h3>
-        <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-          Hãy bấm nút &quot;Run Product Discovery&quot; ở trên hoặc điều chỉnh bộ lọc để AI tìm kiếm và phân tích các ứng viên tiềm năng.
+      <div className="bg-[#121215] border border-[#27272a] rounded-lg p-10 text-center">
+        <h3 className="text-xs font-medium text-zinc-300">Không tìm thấy sản phẩm nào</h3>
+        <p className="text-xs text-zinc-500 mt-1 max-w-sm mx-auto">
+          Hãy bấm &quot;Run Discovery&quot; để tìm kiếm và chấm điểm các sản phẩm dropshipping tiềm năng.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0e1017] border border-[#1c202e] rounded-xl overflow-hidden shadow-xl">
+    <div className="bg-[#121215] border border-[#27272a] rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs text-slate-300">
-          <thead className="bg-[#121520] border-b border-[#1c202e] text-[11px] uppercase tracking-wider text-slate-400">
+        <table className="w-full text-left text-xs text-zinc-300">
+          <thead className="bg-[#18181b] border-b border-[#27272a] text-[11px] uppercase tracking-wider text-zinc-400 font-medium">
             <tr>
-              <th className="py-3 px-4">Sản Phẩm</th>
-              <th className="py-3 px-3">Nguồn</th>
-              <th className="py-3 px-3">Unit Economics</th>
-              <th className="py-3 px-3">Margin $ / %</th>
-              <th className="py-3 px-3">Điểm Đánh Giá</th>
-              <th className="py-3 px-3">Khuyến Nghị</th>
-              <th className="py-3 px-3">Trạng Thái</th>
-              <th className="py-3 px-4 text-right">Thao Tác</th>
+              <th className="py-2.5 px-3.5">Sản Phẩm</th>
+              <th className="py-2.5 px-3">Nguồn</th>
+              <th className="py-2.5 px-3">Economics</th>
+              <th className="py-2.5 px-3">Margin</th>
+              <th className="py-2.5 px-3">Score</th>
+              <th className="py-2.5 px-3">Đánh Giá</th>
+              <th className="py-2.5 px-3">Trạng Thái</th>
+              <th className="py-2.5 px-3.5 text-right">Thao Tác</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#181c2b]">
+          <tbody className="divide-y divide-[#232328]">
             {products.map((p) => {
               const isApproved = p.status === 'approved_for_validation';
-              const isHot = p.product_score >= 82;
-
-              let sourceBadge = 'bg-slate-800 text-slate-300 border-slate-700';
-              if (p.source === 'tiktok') {
-                sourceBadge = 'bg-pink-950/40 text-pink-300 border-pink-500/30';
-              } else if (p.source === 'meta_ads') {
-                sourceBadge = 'bg-blue-950/40 text-blue-300 border-blue-500/30';
-              } else if (p.source === 'amazon') {
-                sourceBadge = 'bg-amber-950/40 text-amber-300 border-amber-500/30';
-              } else if (p.source === 'aliexpress') {
-                sourceBadge = 'bg-orange-950/40 text-orange-300 border-orange-500/30';
-              }
 
               return (
                 <tr
                   key={p.id}
-                  className="hover:bg-[#131624] transition-colors group cursor-pointer"
+                  className="hover:bg-[#18181d] transition-colors group cursor-pointer"
                   onClick={() => onSelectProduct(p)}
                 >
                   {/* Product Info */}
-                  <td className="py-3.5 px-4">
+                  <td className="py-3 px-3.5">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-slate-800 overflow-hidden shrink-0 border border-[#23283d] relative">
+                      <div className="w-10 h-10 rounded-md bg-zinc-800 overflow-hidden shrink-0 border border-zinc-700">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={p.image_url}
                           alt={p.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          className="w-full h-full object-cover"
                         />
                       </div>
                       <div className="min-w-0">
-                        <div className="font-semibold text-slate-100 truncate max-w-xs group-hover:text-emerald-400 transition">
+                        <div className="font-medium text-zinc-100 truncate max-w-xs group-hover:text-white transition">
                           {p.name}
                         </div>
-                        <div className="text-[11px] text-slate-400 truncate max-w-xs mt-0.5">
-                          {p.category} • <span className="text-slate-400">{p.niche}</span>
+                        <div className="text-[11px] text-zinc-500 truncate max-w-xs mt-0.5">
+                          {p.category}
                         </div>
                       </div>
                     </div>
                   </td>
 
                   {/* Source */}
-                  <td className="py-3.5 px-3">
-                    <span className={`text-[10px] uppercase font-mono px-2 py-0.5 rounded border ${sourceBadge}`}>
+                  <td className="py-3 px-3">
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/80 text-zinc-300 border border-zinc-700">
                       {p.source.replace('_', ' ')}
                     </span>
                   </td>
 
                   {/* Unit Economics */}
-                  <td className="py-3.5 px-3 font-mono">
-                    <div className="text-slate-200 font-medium">
-                      Bán: <span className="text-emerald-400">${p.selling_price.toFixed(2)}</span>
+                  <td className="py-3 px-3 font-mono">
+                    <div className="text-zinc-200">
+                      Bán: ${p.selling_price.toFixed(2)}
                     </div>
-                    <div className="text-[11px] text-slate-400">
-                      Landed: ${p.landed_cost.toFixed(2)}
+                    <div className="text-[11px] text-zinc-500">
+                      Cost: ${p.landed_cost.toFixed(2)}
                     </div>
                   </td>
 
                   {/* Gross Margin */}
-                  <td className="py-3.5 px-3 font-mono">
-                    <div className="text-emerald-400 font-semibold">
+                  <td className="py-3 px-3 font-mono">
+                    <div className="text-zinc-100 font-medium">
                       +${p.gross_margin.toFixed(2)}
                     </div>
-                    <div className="text-[11px] text-slate-400">
-                      {p.margin_percentage}% margin
+                    <div className="text-[11px] text-zinc-500">
+                      {p.margin_percentage}%
                     </div>
                   </td>
 
                   {/* Multi-factor Score */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3 px-3">
                     <div className="flex items-center gap-2">
-                      <div
-                        className={`text-sm font-bold font-mono px-2 py-0.5 rounded border ${
-                          isHot
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                            : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                        }`}
-                      >
+                      <span className="text-xs font-mono font-semibold text-zinc-100 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
                         {p.product_score}
-                      </div>
-                      <div className="text-[10px] text-slate-400 space-y-0.5">
-                        <div>Cầu: {p.demand_score}</div>
-                        <div>Ads: {p.creative_score}</div>
+                      </span>
+                      <div className="text-[10px] text-zinc-500 space-y-0.5">
+                        <div>D:{p.demand_score}</div>
+                        <div>C:{p.creative_score}</div>
                       </div>
                     </div>
                   </td>
 
                   {/* Recommendation */}
-                  <td className="py-3.5 px-3">
-                    {p.recommendation === 'TEST' ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded">
-                        🔥 TEST
-                      </span>
-                    ) : p.recommendation === 'CONSIDER' ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded">
-                        ⚠️ CONSIDER
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-400 bg-rose-950/60 border border-rose-500/30 px-2 py-0.5 rounded">
-                        ❌ KILL
-                      </span>
-                    )}
+                  <td className="py-3 px-3">
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded border font-medium ${
+                        p.recommendation === 'TEST'
+                          ? 'bg-zinc-800 text-zinc-100 border-zinc-600'
+                          : p.recommendation === 'CONSIDER'
+                          ? 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                          : 'bg-zinc-950 text-zinc-600 border-zinc-900'
+                      }`}
+                    >
+                      {p.recommendation}
+                    </span>
                   </td>
 
                   {/* Status */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-3 px-3">
                     {isApproved ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">
-                        <Check className="w-3 h-3 text-cyan-400" /> Đã duyệt (Stg 02)
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
+                        <Check className="w-2.5 h-2.5" /> Approved
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded-full border border-slate-700/50">
+                      <span className="text-[10px] text-zinc-500 font-mono">
                         Chờ duyệt
                       </span>
                     )}
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-2">
+                  <td className="py-3 px-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => onSelectProduct(p)}
-                        className="p-1.5 rounded-lg bg-[#181c2b] text-slate-300 hover:text-white hover:bg-slate-700 transition"
-                        title="Xem chi tiết phân tích"
+                        className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition"
+                        title="Xem chi tiết"
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
@@ -182,14 +159,13 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         <button
                           onClick={() => onApproveProduct(p.id)}
                           disabled={isApprovingId === p.id}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/20 text-[11px] font-medium flex items-center gap-1 transition"
+                          className="px-2 py-0.5 rounded-md bg-white text-black hover:bg-zinc-200 text-[11px] font-medium transition"
                         >
-                          <Check className="w-3 h-3" />
-                          <span>Duyệt</span>
+                          Duyệt
                         </button>
                       ) : (
-                        <span className="text-[11px] text-cyan-400 font-mono">
-                          Ready for Stg 02
+                        <span className="text-[11px] text-zinc-500 font-mono">
+                          Ready Stg 02
                         </span>
                       )}
                     </div>

@@ -198,7 +198,7 @@ export default function EcomOSDashboard() {
   };
 
   return (
-    <div className="flex h-screen bg-[#08090d] text-slate-100 overflow-hidden">
+    <div className="flex h-screen bg-[#09090b] text-zinc-100 overflow-hidden">
       {/* 12-Stage Pipeline Sidebar */}
       <Sidebar
         currentStage={currentStage}

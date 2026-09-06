@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageSquare, Send, X, Bot, User, Sparkles, Loader2 } from 'lucide-react';
+import { MessageSquare, Send, X, Bot, User, Loader2 } from 'lucide-react';
 
 interface ChatMessage {
   id: string;
@@ -17,7 +17,7 @@ export const WorkflowChatDrawer: React.FC = () => {
       id: 'init_msg',
       sender: 'assistant',
       content:
-        'Xin chào! Tôi là AI Ecom Analyst. Bạn có thể hỏi tôi bất kỳ điều gì về các sản phẩm vừa crawl, yêu cầu so sánh margin, góc quảng cáo, hoặc tư vấn chiến lược test sản phẩm.',
+        'Tôi là AI Analyst. Bạn có thể hỏi về các sản phẩm đã crawl, yêu cầu so sánh margin, phân tích góc quảng cáo, hoặc lọc theo tiêu chí.',
       timestamp: new Date().toLocaleTimeString(),
     },
   ]);
@@ -75,47 +75,37 @@ export const WorkflowChatDrawer: React.FC = () => {
 
   return (
     <>
-      {/* Floating Toggle Button */}
+      {/* Minimal Floating Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-40 px-4 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 text-black font-semibold text-xs flex items-center gap-2 shadow-2xl shadow-emerald-500/30 hover:scale-105 transition-all"
+          className="fixed bottom-5 right-5 z-40 px-3.5 py-2 rounded-full bg-white text-black font-medium text-xs flex items-center gap-1.5 shadow-xl hover:bg-zinc-200 transition-colors"
         >
-          <Bot className="w-4 h-4" />
-          <span>Hỏi AI Analyst</span>
-          <span className="w-2 h-2 rounded-full bg-black/60 animate-pulse"></span>
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>AI Analyst</span>
         </button>
       )}
 
-      {/* Slide-in Chat Drawer */}
+      {/* Minimal Chat Drawer */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 w-96 h-[500px] bg-[#0c0e15] border border-[#23283d] rounded-2xl flex flex-col shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-5 right-5 z-50 w-88 h-[460px] bg-[#0e0e11] border border-[#27272a] rounded-xl flex flex-col shadow-2xl overflow-hidden text-xs">
           {/* Header */}
-          <div className="px-4 py-3 bg-[#111420] border-b border-[#1e2333] flex items-center justify-between">
+          <div className="px-4 py-2.5 bg-[#141418] border-b border-[#27272a] flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                <Bot className="w-3.5 h-3.5" />
-              </div>
-              <div>
-                <div className="text-xs font-bold text-slate-100 flex items-center gap-1.5">
-                  AI Ecom Analyst
-                  <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                    Live
-                  </span>
-                </div>
-              </div>
+              <Bot className="w-3.5 h-3.5 text-zinc-400" />
+              <span className="font-medium text-zinc-200">AI Analyst</span>
             </div>
 
             <button
               onClick={() => setIsOpen(false)}
-              className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition"
+              className="p-1 rounded text-zinc-500 hover:text-white hover:bg-zinc-800 transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-3 overflow-y-auto space-y-3 text-xs">
+          <div className="flex-1 p-3 overflow-y-auto space-y-2.5">
             {messages.map((m) => {
               const isBot = m.sender === 'assistant';
               return (
@@ -124,50 +114,42 @@ export const WorkflowChatDrawer: React.FC = () => {
                   className={`flex gap-2 ${isBot ? 'items-start' : 'items-start flex-row-reverse'}`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full shrink-0 flex items-center justify-center text-[10px] ${
-                      isBot ? 'bg-emerald-500/20 text-emerald-300' : 'bg-blue-500/20 text-blue-300'
-                    }`}
-                  >
-                    {isBot ? <Bot className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
-                  </div>
-
-                  <div
-                    className={`p-2.5 rounded-xl max-w-[80%] leading-relaxed ${
+                    className={`p-2 rounded-lg max-w-[85%] leading-relaxed ${
                       isBot
-                        ? 'bg-[#141724] border border-[#202538] text-slate-200'
-                        : 'bg-emerald-600 text-black font-medium'
+                        ? 'bg-[#18181b] border border-[#27272a] text-zinc-300'
+                        : 'bg-white text-black font-medium'
                     }`}
                   >
                     <p className="whitespace-pre-wrap">{m.content}</p>
-                    <div className="text-[9px] text-slate-400 mt-1 text-right">{m.timestamp}</div>
+                    <div className="text-[9px] text-zinc-500 mt-1 text-right">{m.timestamp}</div>
                   </div>
                 </div>
               );
             })}
 
             {isSending && (
-              <div className="flex items-center gap-2 text-emerald-400 text-xs pl-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>AI đang phân tích danh mục sản phẩm...</span>
+              <div className="flex items-center gap-1.5 text-zinc-400 text-[11px] pl-1">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>AI đang xử lý...</span>
               </div>
             )}
           </div>
 
           {/* Input Box */}
-          <form onSubmit={handleSend} className="p-3 bg-[#111420] border-t border-[#1e2333] flex gap-2">
+          <form onSubmit={handleSend} className="p-2.5 bg-[#141418] border-t border-[#27272a] flex gap-1.5">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Hỏi về sản phẩm, margin, góc ad..."
-              className="flex-1 bg-[#151928] border border-[#23293d] rounded-lg px-3 py-1.5 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
+              placeholder="Nhập câu hỏi về sản phẩm..."
+              className="flex-1 bg-[#18181b] border border-[#27272a] rounded-md px-2.5 py-1 text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
             />
             <button
               type="submit"
               disabled={isSending || !input.trim()}
-              className="px-3 py-1.5 rounded-lg bg-emerald-500 text-black font-semibold text-xs hover:bg-emerald-400 transition disabled:opacity-50"
+              className="p-1.5 rounded-md bg-white text-black hover:bg-zinc-200 transition-colors disabled:opacity-40"
             >
-              <Send className="w-3.5 h-3.5" />
+              <Send className="w-3 h-3" />
             </button>
           </form>
         </div>

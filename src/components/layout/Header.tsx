@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { RefreshCw, Zap, Cpu, Bell } from 'lucide-react';
+import { RefreshCw, Cpu } from 'lucide-react';
 
 interface HeaderProps {
   onRefresh: () => void;
@@ -10,20 +10,20 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onRefresh, isRefreshing }) => {
   return (
-    <header className="h-14 border-b border-[#1a1e2b] bg-[#0c0d14]/80 backdrop-blur-md px-6 flex items-center justify-between shrink-0">
+    <header className="h-12 border-b border-[#27272a] bg-[#09090b] px-5 flex items-center justify-between shrink-0 select-none">
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-300">
-          <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span className="text-slate-400">Environment:</span>
-          <span className="text-emerald-400 font-semibold">Autonomous Orchestrator</span>
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-300">
+          <span className="w-1.5 h-1.5 rounded-full bg-zinc-400"></span>
+          <span className="text-zinc-500">System:</span>
+          <span className="text-zinc-200 font-medium">Orchestrator Ready</span>
         </div>
 
-        <span className="text-slate-700">|</span>
+        <span className="text-zinc-800">/</span>
 
-        <div className="text-xs text-slate-400 flex items-center gap-1.5">
-          <Cpu className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Worker:</span>
-          <span className="text-slate-200 font-mono">Gemini Flash (Developer Free Quota)</span>
+        <div className="text-xs text-zinc-500 flex items-center gap-1.5 font-mono">
+          <Cpu className="w-3 h-3 text-zinc-400" />
+          <span>Default:</span>
+          <span className="text-zinc-300">Gemini 3.6 Flash</span>
         </div>
       </div>
 
@@ -31,19 +31,17 @@ export const Header: React.FC<HeaderProps> = ({ onRefresh, isRefreshing }) => {
         <button
           onClick={onRefresh}
           disabled={isRefreshing}
-          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition text-xs flex items-center gap-1.5"
-          title="Tải lại danh sách"
+          className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/80 transition text-xs flex items-center gap-1.5"
+          title="Làm mới dữ liệu"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-          <span className="hidden sm:inline text-[11px]">Làm mới</span>
+          <RefreshCw className={`w-3 h-3 ${isRefreshing ? 'animate-spin text-zinc-200' : ''}`} />
+          <span className="hidden sm:inline text-[11px]">Refresh</span>
         </button>
 
-        <div className="h-4 w-px bg-slate-800" />
+        <div className="h-3.5 w-px bg-zinc-800" />
 
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center font-bold text-black text-xs">
-            OS
-          </div>
+        <div className="w-6 h-6 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center font-mono text-zinc-300 text-[11px]">
+          ⌘
         </div>
       </div>
     </header>
