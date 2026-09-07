@@ -1,13 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { ecomStore, Product } from '@/lib/db/store';
+import { NextRequest, NextResponse } from "next/server";
+import { ecomStore, Product } from "@/lib/db/store";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const niche = searchParams.get('niche') || undefined;
-  const status = searchParams.get('status') || undefined;
-  const minScoreStr = searchParams.get('minScore');
+  const niche = searchParams.get("niche") || undefined;
+  const status = searchParams.get("status") || undefined;
+  const minScoreStr = searchParams.get("minScore");
   const minScore = minScoreStr ? Number(minScoreStr) : undefined;
-  const q = searchParams.get('q')?.toLowerCase() || '';
+  const q = searchParams.get("q")?.toLowerCase() || "";
 
   let products = ecomStore.getProducts({ niche, status, minScore });
 
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         p.name.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
         p.niche.toLowerCase().includes(q) ||
-        p.wow_factor.toLowerCase().includes(q)
+        p.wow_factor.toLowerCase().includes(q),
     );
   }
 
@@ -33,18 +33,29 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const { id, status } = body;
 
-    if (!id || !status) {
+    if (
+      typeof id !== "string" ||
+      ![
+        "discovered",
+        "approved_for_validation",
+        "rejected",
+        "testing",
+      ].includes(status)
+    ) {
       return NextResponse.json(
-        { success: false, error: 'Thiếu id hoặc status' },
-        { status: 400 }
+        { success: false, error: "Thiếu id hoặc status" },
+        { status: 400 },
       );
     }
 
-    const updated = ecomStore.updateProductStatus(id, status as Product['status']);
+    const updated = ecomStore.updateProductStatus(
+      id,
+      status as Product["status"],
+    );
     if (!updated) {
       return NextResponse.json(
-        { success: false, error: 'Không tìm thấy sản phẩm' },
-        { status: 404 }
+        { success: false, error: "Không tìm thấy sản phẩm" },
+        { status: 404 },
       );
     }
 
@@ -52,14 +63,14 @@ export async function PATCH(req: NextRequest) {
       success: true,
       product: updated,
       message:
-        status === 'approved_for_validation'
-          ? 'Đã duyệt sản phẩm và mở khóa Stage 02: Product Validation!'
+        status === "approved_for_validation"
+          ? "Đã duyệt sản phẩm và mở khóa Stage 02: Product Validation!"
           : `Đã cập nhật trạng thái sang "${status}"`,
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err?.message || 'Server error' },
-      { status: 500 }
+      { success: false, error: err?.message || "Server error" },
+      { status: 500 },
     );
   }
 }
@@ -69,25 +80,46 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const {
       name,
-      niche = 'Custom Niche',
+      niche = "Custom Niche",
       category,
       supplier_price = 5.0,
       selling_price = 29.99,
-      shipping_cost = 2.50,
+      shipping_cost = 2.5,
       image_url,
-      raw_description = '',
+      raw_description = "",
       auto_approve = true,
     } = body;
 
-    if (!name || !name.trim()) {
+    if (typeof name !== "string" || !name.trim()) {
       return NextResponse.json(
-        { success: false, error: 'Tên sản phẩm không được để trống' },
-        { status: 400 }
+        { success: false, error: "Tên sản phẩm không được để trống" },
+        { status: 400 },
       );
     }
 
-    const { calculateFinancials, calculateProductScore } = await import('@/lib/tools/scoring');
-    const { aiRouter } = await import('@/lib/ai/router');
+    const { calculateFinancials, calculateProductScore, scoreOrDefault } =
+      await import("@/lib/tools/scoring");
+    const { aiRouter } = await import("@/lib/ai/router");
+
+    if (
+      [supplier_price, shipping_cost, selling_price].some(
+        (value) =>
+          (typeof value !== "number" && typeof value !== "string") ||
+          String(value).trim() === "" ||
+          !Number.isFinite(Number(value)),
+      ) ||
+      Number(supplier_price) < 0 ||
+      Number(shipping_cost) < 0 ||
+      Number(selling_price) <= 0
+    ) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Giá vốn/ship phải hữu hạn và không âm, giá bán phải > 0.",
+        },
+        { status: 400 },
+      );
+    }
 
     // 1. Calculate Unit Economics
     const financials = calculateFinancials({
@@ -121,31 +153,47 @@ Trả về JSON:
 }
 `;
       const aiRes = await aiRouter.run({
-        task: 'product_classification',
+        task: "product_classification",
         prompt,
         jsonMode: true,
       });
       aiData = aiRes.data;
     } catch (e) {
-      console.warn('AI analysis fallback for custom product:', e);
+      console.warn("AI analysis fallback for custom product:", e);
     }
 
     const categoryFinal = category || aiData?.category || niche;
-    const targetAudience = aiData?.target_audience || 'Người tiêu dùng yêu thích tiện ích thông minh';
+    const targetAudience =
+      aiData?.target_audience ||
+      "Người tiêu dùng yêu thích tiện ích thông minh";
     const painPoints = Array.isArray(aiData?.pain_points)
       ? aiData.pain_points
-      : ['Giải pháp cũ tốn nhiều thời gian và công sức', 'Bất tiện khi sử dụng hàng ngày', 'Chi phí đắt đỏ'];
-    const wowFactor = aiData?.wow_factor || 'Hiệu quả rõ rệt và tiện dụng ngay trong lần đầu trải nghiệm.';
+      : [
+          "Giải pháp cũ tốn nhiều thời gian và công sức",
+          "Bất tiện khi sử dụng hàng ngày",
+          "Chi phí đắt đỏ",
+        ];
+    const wowFactor =
+      aiData?.wow_factor ||
+      "Hiệu quả rõ rệt và tiện dụng ngay trong lần đầu trải nghiệm.";
     const angles = Array.isArray(aiData?.angles)
       ? aiData.angles
-      : ['Góc 1: Giải quyết nỗi đau thường gặp', 'Góc 2: Trước & sau khi dùng', 'Góc 3: Đánh giá thực tế'];
+      : [
+          "Góc 1: Giải quyết nỗi đau thường gặp",
+          "Góc 2: Trước & sau khi dùng",
+          "Góc 3: Đánh giá thực tế",
+        ];
 
-    const demandScore = Number(aiData?.demand_score) || 86;
-    const compScore = Number(aiData?.competition_score) || 68;
-    const creativeScore = Number(aiData?.creative_score) || 90;
-    const problemScore = Number(aiData?.problem_score) || 85;
-    const shippingScore = Number(aiData?.shipping_score) || 92;
-    const marginScore = Math.min(100, Math.max(30, Math.round(financials.margin_percentage * 1.3)));
+    // Conservative baseline scores if AI data was unavailable
+    const demandScore = scoreOrDefault(aiData?.demand_score, 55);
+    const compScore = scoreOrDefault(aiData?.competition_score, 50);
+    const creativeScore = scoreOrDefault(aiData?.creative_score, 55);
+    const problemScore = scoreOrDefault(aiData?.problem_score, 50);
+    const shippingScore = scoreOrDefault(aiData?.shipping_score, 60);
+    const marginScore = Math.min(
+      100,
+      Math.max(0, Math.round(financials.margin_percentage * 1.3)),
+    );
 
     const scoring = calculateProductScore({
       demand: demandScore,
@@ -159,13 +207,15 @@ Trả về JSON:
     const defaultImg =
       image_url && image_url.trim()
         ? image_url.trim()
-        : 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80';
+        : "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&auto=format&fit=crop&q=80";
 
     const newProduct: Product = {
       id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       name: name.trim(),
-      source: 'manual',
-      url: 'https://myshopify.com/products/' + encodeURIComponent(name.toLowerCase().replace(/\s+/g, '-')),
+      source: "manual",
+      url:
+        "https://myshopify.com/products/" +
+        encodeURIComponent(name.toLowerCase().replace(/\s+/g, "-")),
       image_url: defaultImg,
       niche,
       category: categoryFinal,
@@ -187,7 +237,16 @@ Trả về JSON:
       shipping_score: scoring.shipping_score,
       product_score: scoring.product_score,
 
-      status: auto_approve ? 'approved_for_validation' : 'discovered',
+      status: auto_approve ? "approved_for_validation" : "discovered",
+      pipeline_stage: "01_DISCOVERY",
+      stage_status: {
+        "01": "completed",
+        "02": auto_approve ? "ready" : "pending",
+        "03": "locked",
+        "04": "locked",
+        "05": "locked",
+        "06": "locked",
+      },
       recommendation: scoring.recommendation,
       recommendation_reason: scoring.recommendation_reason,
 
@@ -205,13 +264,12 @@ Trả về JSON:
     return NextResponse.json({
       success: true,
       product: newProduct,
-      message: 'Đã thêm sản phẩm của bạn vào hệ thống thành công!',
+      message: "Đã thêm sản phẩm của bạn vào hệ thống thành công!",
     });
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, error: err?.message || 'Server error' },
-      { status: 500 }
+      { success: false, error: err?.message || "Server error" },
+      { status: 500 },
     );
   }
 }
-

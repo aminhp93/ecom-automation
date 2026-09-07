@@ -16,6 +16,7 @@ import { Stage04SupplierView } from '@/components/stages/Stage04SupplierView';
 import { Stage05OfferView } from '@/components/stages/Stage05OfferView';
 import { Stage06CreativeView } from '@/components/stages/Stage06CreativeView';
 import { AddCustomProductModal } from '@/components/discovery/AddCustomProductModal';
+import { AiTokenAuditModal } from '@/components/modals/AiTokenAuditModal';
 
 import { Product, WorkflowEvent } from '@/lib/db/store';
 import { ChevronRight, Package, Sparkles, Plus } from 'lucide-react';
@@ -28,6 +29,7 @@ export default function EcomOSDashboard() {
   const [activeWorkingProductId, setActiveWorkingProductId] = useState<string>('');
   const [isApprovingId, setIsApprovingId] = useState<string | undefined>(undefined);
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+  const [isTokenAuditOpen, setIsTokenAuditOpen] = useState(false);
 
   // Workflow Execution & Streaming State
   const [isRunning, setIsRunning] = useState(false);
@@ -186,12 +188,44 @@ export default function EcomOSDashboard() {
     }
   };
 
-  // Run Stages 02 -> 06/07 with Generic SSE Runner
-  const handleRunStage = async (stageNum: string) => {
+  // Run Stages 02 -> 06 with Strict Preflight Gating & SSE Runner
+  const handleRunStage = async (stageNum: string, allowNoGoOverride = false) => {
     if (isRunning || !activeWorkingProduct) return;
 
+    // Strict Pipeline Pre-flight Gating
+    if (stageNum === '02') {
+      if (activeWorkingProduct.status === 'rejected') {
+        alert('Sản phẩm này đã bị loại (Rejected). Không thể chạy xác thực Stage 02.');
+        return;
+      }
+    } else if (stageNum === '03') {
+      if (!activeWorkingProduct.validation) {
+        alert('❌ Cổng Gating Chặn: Bạn cần hoàn thành Stage 02 (Validation) trước khi chạy Stage 03.');
+        return;
+      }
+      if (activeWorkingProduct.validation.verdict === 'NO_GO' && !allowNoGoOverride) {
+        alert('❌ Cổng Gating Chặn: Sản phẩm nhận phán quyết NO_GO ở Stage 02. Hãy tích chọn "Bỏ qua phán quyết NO_GO" nếu bạn vẫn muốn tiếp tục.');
+        return;
+      }
+    } else if (stageNum === '04') {
+      if (!activeWorkingProduct.competitor_analysis) {
+        alert('❌ Cổng Gating Chặn: Bạn cần hoàn thành Stage 03 (Competitor Research) trước khi thẩm định nhà cung cấp.');
+        return;
+      }
+    } else if (stageNum === '05') {
+      if (!activeWorkingProduct.competitor_analysis || !activeWorkingProduct.supplier_economics) {
+        alert('❌ Cổng Gating Chặn: Stage 05 yêu cầu dữ liệu của cả Stage 03 (Competitor) và Stage 04 (Supplier).');
+        return;
+      }
+    } else if (stageNum === '06') {
+      if (!activeWorkingProduct.offer_package) {
+        alert('❌ Cổng Gating Chặn: Bạn cần hoàn thành Stage 05 (Offer Creation) trước khi sản xuất kịch bản và trang Shopify.');
+        return;
+      }
+    }
+
     setIsRunning(true);
-    setProgress(10);
+    setProgress(15);
     setLogs([
       {
         id: `start_stg_${stageNum}`,
@@ -206,7 +240,11 @@ export default function EcomOSDashboard() {
       const response = await fetch('/api/workflows/run-stage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: activeWorkingProduct.id, stage: stageNum }),
+        body: JSON.stringify({
+          productId: activeWorkingProduct.id,
+          stage: stageNum,
+          allowNoGoOverride,
+        }),
       });
 
       if (!response.body) throw new Error('SSE stream không hỗ trợ');
@@ -230,10 +268,10 @@ export default function EcomOSDashboard() {
               const event: WorkflowEvent = JSON.parse(trimmed.slice(6));
               setLogs((prev) => [...prev, event]);
 
-              if (event.type === 'search') setProgress(35);
-              else if (event.type === 'ai_analyze') setProgress(70);
+              if (event.type === 'search') setProgress(40);
+              else if (event.type === 'ai_analyze') setProgress(75);
               else if (event.type === 'score') {
-                setProgress(95);
+                setProgress(90);
                 loadData();
               } else if (event.type === 'done') setProgress(100);
             } catch (err) {
@@ -261,6 +299,14 @@ export default function EcomOSDashboard() {
 
   // Human Approval Gate: Approve Product for Stage 02
   const handleApproveProduct = async (productId: string) => {
+    const targetProduct = products.find((p) => p.id === productId);
+    if (targetProduct && (targetProduct.recommendation === 'KILL' || targetProduct.product_score < 68)) {
+      const proceed = window.confirm(
+        `⚠️ CẢNH BÁO PIPELINE GATING:\n\nSản phẩm "${targetProduct.name}" có điểm số thấp (${targetProduct.product_score}/100) và khuyến nghị ${targetProduct.recommendation}.\n\nBạn có chắc chắn muốn bỏ qua khuyến nghị để phê duyệt sản phẩm này vào Stage 02 không?`
+      );
+      if (!proceed) return;
+    }
+
     setIsApprovingId(productId);
     try {
       const res = await fetch('/api/products', {
@@ -284,12 +330,14 @@ export default function EcomOSDashboard() {
 
   return (
     <div className="flex h-screen bg-[#fafafa] text-zinc-900 overflow-hidden">
-      {/* 12-Stage Pipeline Sidebar */}
+      {/* 6-Stage Core V1 + Roadmap Sidebar */}
       <Sidebar
         currentStage={currentStage}
         onSelectStage={(stage) => setCurrentStage(stage)}
+        activeProduct={activeWorkingProduct}
         stats={stats}
         providers={providers}
+        onOpenTokenAudit={() => setIsTokenAuditOpen(true)}
       />
 
       {/* Main Orchestration Canvas */}
@@ -327,7 +375,7 @@ export default function EcomOSDashboard() {
             </div>
 
             <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 font-mono">
-              <span>Stage {currentStage} / 12</span>
+              <span>Giai đoạn {currentStage} / 06 (Core V1 Pipeline)</span>
             </div>
           </div>
         )}
@@ -377,7 +425,7 @@ export default function EcomOSDashboard() {
             {currentStage === '03' && (
               <Stage03CompetitorView
                 product={activeWorkingProduct}
-                onRunStage={() => handleRunStage('03')}
+                onRunStage={(override) => handleRunStage('03', override)}
                 isRunning={isRunning}
                 onProceedToNext={() => setCurrentStage('04')}
               />
@@ -403,30 +451,31 @@ export default function EcomOSDashboard() {
               />
             )}
 
-            {/* STAGE 06/07: Creative & Store Page Engine (Claude Sonnet 4.5) */}
-            {(currentStage === '06' || currentStage === '07') && (
+            {/* STAGE 06: Creative & Store Page Engine (Claude Sonnet 4.5) */}
+            {currentStage === '06' && (
               <Stage06CreativeView
                 product={activeWorkingProduct}
                 onRunStage={() => handleRunStage('06')}
                 isRunning={isRunning}
+                onGoToRoadmap={() => setCurrentStage('07')}
               />
             )}
 
-            {/* STAGES 08 - 12: Planned Future Stages */}
-            {['08', '09', '10', '11', '12'].includes(currentStage) && (
+            {/* STAGES 07 - 12: Planned Future Stages (Roadmap V2) */}
+            {['07', '08', '09', '10', '11', '12'].includes(currentStage) && (
               <div className="bg-white border border-zinc-200 rounded-lg p-12 text-center shadow-2xs space-y-2">
                 <Sparkles className="w-8 h-8 text-zinc-400 mx-auto" />
                 <h2 className="text-sm font-semibold text-zinc-900">
                   Stage {currentStage}: Roadmap V2 & V3
                 </h2>
                 <p className="text-xs text-zinc-500 max-w-md mx-auto leading-relaxed">
-                  Giai đoạn này thuộc phần mở rộng (Meta Ads API Integration, Shopify Live Sync, và Autonomous Analytics Optimization) sau khi bạn hoàn tất kiểm thử bộ công cụ V1 (Stages 01 - 07).
+                  Giai đoạn này thuộc phần mở rộng (Meta Ads API Integration, Shopify Live Sync, và Autonomous Analytics Optimization) sau khi bạn hoàn tất kiểm thử bộ công cụ V1 (Stages 01 - 06).
                 </p>
                 <button
-                  onClick={() => setCurrentStage('01')}
+                  onClick={() => setCurrentStage('06')}
                   className="mt-3 px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-800 text-xs font-medium hover:bg-zinc-200 transition"
                 >
-                  Quay lại Stage 01
+                  Quay lại Stage 06
                 </button>
               </div>
             )}
@@ -458,6 +507,13 @@ export default function EcomOSDashboard() {
           // Auto switch to Stage 02
           setCurrentStage('02');
         }}
+      />
+
+      {/* AI Token & Cost Audit Modal */}
+      <AiTokenAuditModal
+        isOpen={isTokenAuditOpen}
+        onClose={() => setIsTokenAuditOpen(false)}
+        stats={stats}
       />
 
       {/* Embedded In-Workflow AI Chat Assistant */}

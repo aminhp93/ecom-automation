@@ -1,35 +1,53 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Product } from '@/lib/db/store';
-import { Play, Loader2, Film, Copy, Check, Sparkles, Store, Layers } from 'lucide-react';
+import React, { useState } from "react";
+import { Product } from "@/lib/db/store";
+import { creativeSchema } from "@/lib/workflows/schemas";
+import {
+  Play,
+  Loader2,
+  Film,
+  Copy,
+  Check,
+  Sparkles,
+  Store,
+  Layers,
+} from "lucide-react";
 
 interface Stage06CreativeViewProps {
   product: Product | null;
   onRunStage: () => void;
   isRunning: boolean;
+  onGoToRoadmap?: () => void;
 }
 
 export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
   product,
   onRunStage,
   isRunning,
+  onGoToRoadmap,
 }) => {
-  const [subTab, setSubTab] = useState<'hooks' | 'scripts' | 'shopify'>('hooks');
+  const [subTab, setSubTab] = useState<"hooks" | "scripts" | "shopify">(
+    "hooks",
+  );
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   if (!product) {
     return (
       <div className="bg-white border border-zinc-200 rounded-lg p-10 text-center shadow-2xs">
-        <h3 className="text-xs font-medium text-zinc-900">Chưa chọn sản phẩm</h3>
+        <h3 className="text-xs font-medium text-zinc-900">
+          Chưa chọn sản phẩm
+        </h3>
         <p className="text-xs text-zinc-500 mt-1">
-          Vui lòng chọn sản phẩm đã duyệt để sản xuất kịch bản và nội dung trang bán hàng.
+          Vui lòng chọn sản phẩm đã duyệt để sản xuất kịch bản và nội dung trang
+          bán hàng.
         </p>
       </div>
     );
   }
 
-  const cr = product.creative_pack;
+  const cr = creativeSchema.safeParse(product.creative_pack).data;
+  const hasOffer = !!product.offer_package;
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -39,33 +57,50 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* Prerequisite Gate Banner */}
+      {!hasOffer && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3.5 flex items-start gap-3 text-xs text-red-900">
+          <Film className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold text-red-800">
+              Cổng Kiểm Soát Pipeline: Thiếu Dữ Liệu Stage 05 (Offer Creation)
+            </div>
+            <div className="text-red-700 text-[11px] mt-0.5">
+              Bạn cần hoàn tất thiết kế 3 tầng Offer và lời cam kết ở Stage 05
+              trước. Kịch bản video và trang Shopify phụ thuộc chặt chẽ vào cấu
+              trúc ưu đãi này.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border border-zinc-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-100 text-zinc-600 border border-zinc-200">
-              Stage 06 & 07
+              Stage 06 • Final V1 Delivery
             </span>
             <h1 className="text-sm font-semibold text-zinc-900">
-              Creative Production & Shopify Page Engine
+              Creative Studio & Shopify Storefront Engine
             </h1>
             <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-black text-white">
               Powered by Claude Sonnet 4.5
             </span>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Sản phẩm:{' '}
-            <strong className="text-zinc-900">{product.name}</strong> ({product.niche})
+            Sản phẩm: <strong className="text-zinc-900">{product.name}</strong>{" "}
+            ({product.niche})
           </p>
         </div>
 
         <button
           onClick={onRunStage}
-          disabled={isRunning}
+          disabled={isRunning || !hasOffer}
           className={`px-3 py-1.5 rounded-md font-medium text-xs flex items-center gap-1.5 transition ${
-            isRunning
-              ? 'bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed'
-              : 'bg-black text-white hover:bg-zinc-800'
+            isRunning || !hasOffer
+              ? "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
+              : "bg-black text-white hover:bg-zinc-800"
           }`}
         >
           {isRunning ? (
@@ -76,7 +111,11 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
           ) : (
             <>
               <Play className="w-3 h-3 fill-white" />
-              <span>{cr ? 'Tạo Lại Kịch Bản & Store' : 'Tạo Kịch Bản & Store (Claude)'}</span>
+              <span>
+                {cr
+                  ? "Tạo Lại Kịch Bản & Store"
+                  : "Tạo Kịch Bản & Store (Claude)"}
+              </span>
             </>
           )}
         </button>
@@ -85,9 +124,13 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
       {!cr ? (
         <div className="bg-white border border-zinc-200 rounded-lg p-12 text-center shadow-2xs">
           <Film className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
-          <h3 className="text-xs font-semibold text-zinc-900">Sản xuất vũ khí Content & Trang Bán Hàng</h3>
+          <h3 className="text-xs font-semibold text-zinc-900">
+            Sản xuất vũ khí Content & Trang Bán Hàng
+          </h3>
           <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
-            Claude Sonnet 4.5 sẽ trực tiếp viết 10 Viral Video Hooks cho TikTok/Reels, 3 kịch bản video ad phân cảnh chi tiết từng giây, và toàn bộ nội dung mô tả sản phẩm chuẩn SEO cho Shopify.
+            Claude Sonnet 4.5 sẽ trực tiếp viết 10 Viral Video Hooks cho
+            TikTok/Reels, 3 kịch bản video ad phân cảnh chi tiết từng giây, và
+            toàn bộ nội dung mô tả sản phẩm chuẩn SEO cho Shopify.
           </p>
           <button
             onClick={onRunStage}
@@ -99,34 +142,64 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
         </div>
       ) : (
         <div className="space-y-4">
+          {/* Pipeline Complete & Launch Ready Success Banner */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs shadow-2xs">
+            <div className="flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-emerald-900 flex items-center gap-2">
+                  <span>Bản nháp creative — cần người dùng kiểm tra</span>
+                  <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-emerald-600 text-white font-medium">
+                    STATUS: NEEDS_REVIEW
+                  </span>
+                </div>
+                <div className="text-emerald-700 text-[11px] mt-0.5">
+                  Chưa được duyệt launch. Đối chiếu giá/offer, điều kiện giao
+                  hàng, chính sách đổi trả và bằng chứng cho mọi claim trước khi
+                  xuất bản hoặc chạy ads.
+                </div>
+              </div>
+            </div>
+
+            {onGoToRoadmap && (
+              <button
+                onClick={onGoToRoadmap}
+                className="px-3 py-1.5 rounded-md bg-emerald-700 text-white text-xs font-medium hover:bg-emerald-800 transition shrink-0 flex items-center gap-1"
+              >
+                <span>Xem Roadmap V2 (Meta Ads)</span>
+                <span>→</span>
+              </button>
+            )}
+          </div>
+
           {/* Sub Navigation Tabs */}
           <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-md border border-zinc-200 text-xs w-fit">
             <button
-              onClick={() => setSubTab('hooks')}
+              onClick={() => setSubTab("hooks")}
               className={`px-3 py-1 rounded-sm font-medium transition ${
-                subTab === 'hooks'
-                  ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-600 hover:text-zinc-900'
+                subTab === "hooks"
+                  ? "bg-white text-zinc-900 shadow-2xs"
+                  : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
               10 Viral Hooks ({cr.viral_hooks.length})
             </button>
             <button
-              onClick={() => setSubTab('scripts')}
+              onClick={() => setSubTab("scripts")}
               className={`px-3 py-1 rounded-sm font-medium transition ${
-                subTab === 'scripts'
-                  ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-600 hover:text-zinc-900'
+                subTab === "scripts"
+                  ? "bg-white text-zinc-900 shadow-2xs"
+                  : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
               Kịch Bản Video Ads ({cr.video_scripts.length})
             </button>
             <button
-              onClick={() => setSubTab('shopify')}
+              onClick={() => setSubTab("shopify")}
               className={`px-3 py-1 rounded-sm font-medium transition ${
-                subTab === 'shopify'
-                  ? 'bg-white text-zinc-900 shadow-2xs'
-                  : 'text-zinc-600 hover:text-zinc-900'
+                subTab === "shopify"
+                  ? "bg-white text-zinc-900 shadow-2xs"
+                  : "text-zinc-600 hover:text-zinc-900"
               }`}
             >
               Nội Dung Trang Shopify
@@ -134,7 +207,7 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
           </div>
 
           {/* Subtab 1: Viral Hooks */}
-          {subTab === 'hooks' && (
+          {subTab === "hooks" && (
             <div className="space-y-2.5">
               {cr.viral_hooks.map((h) => (
                 <div
@@ -172,7 +245,7 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
           )}
 
           {/* Subtab 2: Video Scripts Scene-by-Scene */}
-          {subTab === 'scripts' && (
+          {subTab === "scripts" && (
             <div className="space-y-4">
               {cr.video_scripts.map((sc, sIdx) => (
                 <div
@@ -185,7 +258,8 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
                         {sc.title}
                       </div>
                       <div className="text-[11px] text-zinc-500 mt-0.5">
-                        Framework: {sc.framework} • Thời lượng: {sc.target_length}
+                        Framework: {sc.framework} • Thời lượng:{" "}
+                        {sc.target_length}
                       </div>
                     </div>
 
@@ -196,9 +270,9 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
                           sc.scenes
                             .map(
                               (sn) =>
-                                `[${sn.time}]\n• Visual B-roll: ${sn.visual}\n• Voiceover: ${sn.audio}\n• Text Overlay: ${sn.text_overlay}`
+                                `[${sn.time}]\n• Visual B-roll: ${sn.visual}\n• Voiceover: ${sn.audio}\n• Text Overlay: ${sn.text_overlay}`,
                             )
-                            .join('\n\n')
+                            .join("\n\n"),
                         )
                       }
                       className="px-2.5 py-1 rounded-md border border-zinc-200 bg-white text-zinc-700 text-xs font-medium hover:bg-zinc-100 transition flex items-center gap-1.5"
@@ -228,19 +302,31 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
                             {sn.time}
                           </span>
                           <div className="text-[11px] text-zinc-500 mt-2">
-                            <span className="font-semibold text-zinc-700">Text Màn Hình:</span>
-                            <div className="text-zinc-900 font-medium italic mt-0.5">&ldquo;{sn.text_overlay}&rdquo;</div>
+                            <span className="font-semibold text-zinc-700">
+                              Text Màn Hình:
+                            </span>
+                            <div className="text-zinc-900 font-medium italic mt-0.5">
+                              &ldquo;{sn.text_overlay}&rdquo;
+                            </div>
                           </div>
                         </div>
 
                         <div className="sm:col-span-3 space-y-1.5">
                           <div>
-                            <span className="text-[10px] font-mono uppercase text-zinc-400">Hình ảnh B-Roll quay:</span>
-                            <div className="text-zinc-800 font-medium mt-0.5">{sn.visual}</div>
+                            <span className="text-[10px] font-mono uppercase text-zinc-400">
+                              Hình ảnh B-Roll quay:
+                            </span>
+                            <div className="text-zinc-800 font-medium mt-0.5">
+                              {sn.visual}
+                            </div>
                           </div>
                           <div className="pt-1.5 border-t border-zinc-100">
-                            <span className="text-[10px] font-mono uppercase text-zinc-400">Lời thoại Voiceover:</span>
-                            <div className="text-zinc-900 mt-0.5 leading-relaxed">&ldquo;{sn.audio}&rdquo;</div>
+                            <span className="text-[10px] font-mono uppercase text-zinc-400">
+                              Lời thoại Voiceover:
+                            </span>
+                            <div className="text-zinc-900 mt-0.5 leading-relaxed">
+                              &ldquo;{sn.audio}&rdquo;
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -252,7 +338,7 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
           )}
 
           {/* Subtab 3: Shopify Store Page Content */}
-          {subTab === 'shopify' && (
+          {subTab === "shopify" && (
             <div className="space-y-4">
               {/* Headline & Subheadline */}
               <div className="bg-white border border-zinc-200 rounded-lg p-4 shadow-2xs space-y-1.5">
@@ -307,12 +393,20 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
               {/* Raw HTML Code Box */}
               <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-4 text-zinc-100 font-mono text-xs space-y-2 shadow-sm">
                 <div className="flex items-center justify-between text-[11px] text-zinc-400 border-b border-zinc-800 pb-2">
-                  <span>Mã HTML Mô Tả Sản Phẩm (Dán thẳng vào Shopify Product Description)</span>
+                  <span>
+                    Mã HTML Mô Tả Sản Phẩm (Dán thẳng vào Shopify Product
+                    Description)
+                  </span>
                   <button
-                    onClick={() => handleCopy('shopify_html', cr.shopify_page.html_description)}
+                    onClick={() =>
+                      handleCopy(
+                        "shopify_html",
+                        cr.shopify_page.html_description,
+                      )
+                    }
                     className="px-2.5 py-1 rounded bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition flex items-center gap-1.5"
                   >
-                    {copiedId === 'shopify_html' ? (
+                    {copiedId === "shopify_html" ? (
                       <>
                         <Check className="w-3 h-3 text-white" />
                         <span>Đã copy HTML</span>

@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Workflow safety and tests
+
+- Run `pnpm test` for isolated regression tests. Tests transpile the real TypeScript modules with mocked AI and filesystem adapters; they never read secrets, call live providers, or write `.data`.
+- Stages 01–06 are a **draft planning pipeline**, not verified market research or automatic launch approval. Discovery uses sample candidates; competitor and supplier data remain unverified/estimated. Missing trend/ads measurements are `null`, not random observations.
+- AI output must satisfy runtime schemas before persistence. Validation without live evidence cannot automatically produce `GO`; creative completion does not produce `LAUNCH_READY`.
+- A successful upstream rerun clears downstream artifacts. Product revisions reject outputs computed against old inputs; rejected products are blocked. Explicit Stage03 NO_GO override is scoped to the current validation and is cleared on revalidation.
+- Bundle economics assume shipping per unit, payment fee 2.9% + $0.30 and a 3% refund reserve. Price floors target 30% contribution **before advertising**. Tax, operating costs, verified quotes and final merchant policies still require review. The 500-order wholesale scenario is hypothetical, not a supplier commitment.
+- Store writes use an atomic rename plus a fail-fast directory lock across processes sharing the same filesystem. If a process crashes and leaves `.data/ecom_store.json.lock`, first verify that **all app workers are stopped**, then remove the stale lock manually. Never clear a lock held by a live worker. This local-file store is not a distributed/serverless database.
+- Existing seed/legacy outputs are not retroactively verified. Invalid legacy shapes are not rendered by stage views; rerun the affected stages to regenerate safe draft outputs. No existing product data is automatically rewritten by these fixes.
+
 ## Getting Started
 
 First, run the development server:

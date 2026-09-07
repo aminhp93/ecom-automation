@@ -20,6 +20,9 @@ export interface AIRequest {
   temperature?: number;
   maxTokens?: number;
   jsonMode?: boolean;
+  agentName?: string;
+  workflowRunId?: string;
+  skipAutoLog?: boolean;
 }
 
 export interface AIResponse<T = any> {
@@ -30,6 +33,8 @@ export interface AIResponse<T = any> {
   usage: AITokenUsage;
   costUsd: number;
   latencyMs: number;
+  isFallback?: boolean;
+  fallbackWarning?: string;
 }
 
 export interface AIProvider {

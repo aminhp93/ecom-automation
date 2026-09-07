@@ -16,6 +16,8 @@ export class MockProvider implements AIProvider {
     let data: any = undefined;
 
     if (request.task === 'product_classification') {
+      // stage01 asks for classification AND the 6-factor scores in a single call,
+      // so the offline mock must return both (otherwise discovery falls back to rock-bottom scores).
       data = {
         category: 'Baby Care & Safety',
         target_audience: 'New mothers & fathers (infants 3-18 months)',
@@ -30,6 +32,11 @@ export class MockProvider implements AIProvider {
           'Before/After: Fussy screaming baby vs happily self-soothing',
           'Demonstration: Safe food-grade silicone freezing test',
         ],
+        demand_score: 78,
+        competition_score: 62,
+        creative_score: 82,
+        problem_score: 80,
+        shipping_score: 84,
       };
       content = JSON.stringify(data, null, 2);
     } else if (request.task === 'product_scoring') {

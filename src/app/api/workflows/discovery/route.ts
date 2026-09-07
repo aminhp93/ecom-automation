@@ -11,6 +11,15 @@ export async function POST(req: NextRequest) {
 
   const stream = new ReadableStream({
     async start(controller) {
+      // Keep-alive heartbeat ping every 5 seconds to prevent connection drops during AI reasoning
+      const pingInterval = setInterval(() => {
+        try {
+          controller.enqueue(encoder.encode(': keep-alive\n\n'));
+        } catch {
+          clearInterval(pingInterval);
+        }
+      }, 5000);
+
       const sendEvent = (event: WorkflowEvent) => {
         try {
           const payload = `data: ${JSON.stringify(event)}\n\n`;
@@ -35,6 +44,7 @@ export async function POST(req: NextRequest) {
           message: `Lỗi thực thi: ${err?.message || 'Unknown error'}`,
         });
       } finally {
+        clearInterval(pingInterval);
         controller.close();
       }
     },

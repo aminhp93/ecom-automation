@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Product } from '@/lib/db/store';
-import { X, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, ExternalLink } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -65,6 +65,19 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
               </div>
 
               <h2 className="text-sm font-semibold text-zinc-900">{product.name}</h2>
+              {product.url && (
+                <div>
+                  <a
+                    href={product.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                  >
+                    <span>Mở trang sản phẩm / Nguồn tham khảo</span>
+                    <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+              )}
               <p className="text-xs text-zinc-700 leading-relaxed bg-zinc-50 p-2.5 rounded-md border border-zinc-200">
                 <strong className="text-zinc-900">Wow Factor:</strong> {product.wow_factor}
               </p>

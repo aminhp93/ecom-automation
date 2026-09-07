@@ -1,8 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Product } from '@/lib/db/store';
-import { Play, Loader2, ArrowRight, Tag, ShieldCheck, Check, Copy } from 'lucide-react';
+import React, { useState } from "react";
+import { Product } from "@/lib/db/store";
+import { offerSchema } from "@/lib/workflows/schemas";
+import {
+  Play,
+  Loader2,
+  ArrowRight,
+  Tag,
+  ShieldCheck,
+  Check,
+  Copy,
+} from "lucide-react";
 
 interface Stage05OfferViewProps {
   product: Product | null;
@@ -22,7 +31,9 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
   if (!product) {
     return (
       <div className="bg-white border border-zinc-200 rounded-lg p-10 text-center shadow-2xs">
-        <h3 className="text-xs font-medium text-zinc-900">Chưa chọn sản phẩm</h3>
+        <h3 className="text-xs font-medium text-zinc-900">
+          Chưa chọn sản phẩm
+        </h3>
         <p className="text-xs text-zinc-500 mt-1">
           Vui lòng chọn sản phẩm đã duyệt để thiết kế offer.
         </p>
@@ -30,7 +41,9 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
     );
   }
 
-  const off = product.offer_package;
+  const off = offerSchema.safeParse(product.offer_package).data;
+  const hasPrereq =
+    !!product.competitor_analysis && !!product.supplier_economics;
 
   const handleCopy = (tier: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -40,6 +53,30 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+        Bản nháp cần duyệt. Giá bundle dựa trên chi phí ước tính, chưa gồm
+        thuế/vận hành; xác nhận shipping, chính sách đổi trả và mọi claim trước
+        khi dùng.
+      </div>
+      {/* Prerequisite Gate Banner */}
+      {!hasPrereq && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3.5 flex items-start gap-3 text-xs text-red-900">
+          <Tag className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-semibold text-red-800">
+              Cổng Kiểm Soát Pipeline: Thiếu Dữ Liệu Tiền Đề
+            </div>
+            <div className="text-red-700 text-[11px] mt-0.5">
+              Stage 05 yêu cầu thông tin đối thủ (Stage 03:{" "}
+              {!product.competitor_analysis ? "Chưa xong ❌" : "Đã có ✓"}) và
+              kinh tế nguồn hàng (Stage 04:{" "}
+              {!product.supplier_economics ? "Chưa xong ❌" : "Đã có ✓"}) để
+              định giá các gói bundle và thiết kế lời đề nghị không thể chối từ.
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border border-zinc-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
         <div>
@@ -55,19 +92,19 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
             </span>
           </div>
           <p className="text-xs text-zinc-500 mt-0.5">
-            Sản phẩm:{' '}
-            <strong className="text-zinc-900">{product.name}</strong> (Giá bán lẻ neo: ${product.selling_price})
+            Sản phẩm: <strong className="text-zinc-900">{product.name}</strong>{" "}
+            (Giá bán lẻ neo: ${product.selling_price})
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={onRunStage}
-            disabled={isRunning}
+            disabled={isRunning || !hasPrereq}
             className={`px-3 py-1.5 rounded-md font-medium text-xs flex items-center gap-1.5 transition ${
-              isRunning
-                ? 'bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed'
-                : 'bg-black text-white hover:bg-zinc-800'
+              isRunning || !hasPrereq
+                ? "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
+                : "bg-black text-white hover:bg-zinc-800"
             }`}
           >
             {isRunning ? (
@@ -78,7 +115,9 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
             ) : (
               <>
                 <Play className="w-3 h-3 fill-white" />
-                <span>{off ? 'Tạo Lại Offer' : 'Tạo 3 Gói Offer (Claude)'}</span>
+                <span>
+                  {off ? "Tạo Lại Offer" : "Tạo 3 Gói Offer (Claude)"}
+                </span>
               </>
             )}
           </button>
@@ -88,7 +127,7 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
               onClick={onProceedToNext}
               className="px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-900 font-medium text-xs flex items-center gap-1.5 hover:bg-zinc-200 border border-zinc-200"
             >
-              <span>Tiếp Tục Stage 06/07</span>
+              <span>Tiếp Tục Stage 06 (Creative & Store)</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           )}
@@ -98,9 +137,13 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
       {!off ? (
         <div className="bg-white border border-zinc-200 rounded-lg p-12 text-center shadow-2xs">
           <Tag className="w-8 h-8 text-zinc-400 mx-auto mb-2" />
-          <h3 className="text-xs font-semibold text-zinc-900">Xây dựng Grand Slam Offer với Claude Sonnet 4.5</h3>
+          <h3 className="text-xs font-semibold text-zinc-900">
+            Xây dựng Grand Slam Offer với Claude Sonnet 4.5
+          </h3>
           <p className="text-xs text-zinc-500 mt-1 max-w-md mx-auto">
-            Hệ thống sẽ dùng Claude Sonnet để thiết kế 3 tầng gói cước (Starter Pack, Buy 1 Get 1 50% Off, Family Deluxe Bundle) kèm cam kết bảo hành đảo ngược rủi ro để tối đa hóa AOV.
+            Hệ thống sẽ dùng Claude Sonnet để thiết kế 3 tầng gói cước (Starter
+            Pack, Buy 1 Get 1 50% Off, Family Deluxe Bundle) kèm cam kết bảo
+            hành đảo ngược rủi ro để tối đa hóa AOV.
           </p>
           <button
             onClick={onRunStage}
@@ -123,21 +166,22 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
               </div>
             </div>
             <div className="pt-2 border-t border-zinc-200 text-zinc-600">
-              <strong className="text-zinc-800">Khao khát chuyển hóa:</strong> {off.target_desire}
+              <strong className="text-zinc-800">Khao khát chuyển hóa:</strong>{" "}
+              {off.target_desire}
             </div>
           </div>
 
           {/* 3 Tier Offer Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
             {off.packages.map((pkg) => {
-              const isPopular = pkg.tier === 'B';
+              const isPopular = pkg.tier === "B";
               return (
                 <div
                   key={pkg.tier}
                   className={`bg-white rounded-lg p-4 flex flex-col justify-between transition-all ${
                     isPopular
-                      ? 'border-2 border-black shadow-md relative'
-                      : 'border border-zinc-200 shadow-2xs'
+                      ? "border-2 border-black shadow-md relative"
+                      : "border border-zinc-200 shadow-2xs"
                   }`}
                 >
                   <div>
@@ -173,7 +217,10 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
 
                     <div className="space-y-1.5 pt-3 border-t border-zinc-100 text-xs">
                       {pkg.items.map((it, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-zinc-700">
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 text-zinc-700"
+                        >
                           <Check className="w-3.5 h-3.5 text-zinc-900 shrink-0" />
                           <span>{it}</span>
                         </div>
@@ -185,7 +232,7 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
                     onClick={() =>
                       handleCopy(
                         pkg.tier,
-                        `${pkg.name} - Giá: $${pkg.price.toFixed(2)} (Tiết kiệm ${pkg.savings})\nBao gồm: ${pkg.items.join(', ')}`
+                        `${pkg.name} - Giá: $${pkg.price.toFixed(2)} (Tiết kiệm ${pkg.savings})\nBao gồm: ${pkg.items.join(", ")}`,
                       )
                     }
                     className="mt-4 w-full py-1.5 rounded-md border border-zinc-200 text-zinc-700 text-xs font-medium hover:bg-zinc-100 transition flex items-center justify-center gap-1.5"
@@ -214,14 +261,18 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
                 <ShieldCheck className="w-4 h-4 text-black" />
                 <span>Cam Kết Bảo Hành Đảo Ngược Rủi Ro:</span>
               </div>
-              <p className="text-zinc-600 leading-relaxed">{off.risk_reversal_guarantee}</p>
+              <p className="text-zinc-600 leading-relaxed">
+                {off.risk_reversal_guarantee}
+              </p>
             </div>
 
             <div className="bg-white border border-zinc-200 rounded-lg p-3.5 shadow-2xs space-y-1">
               <div className="font-semibold text-zinc-900 flex items-center gap-1.5">
                 <span>⚡ Lý Do Cấp Bách (Urgency Trigger):</span>
               </div>
-              <p className="text-zinc-600 leading-relaxed">{off.urgency_hook}</p>
+              <p className="text-zinc-600 leading-relaxed">
+                {off.urgency_hook}
+              </p>
             </div>
           </div>
         </div>

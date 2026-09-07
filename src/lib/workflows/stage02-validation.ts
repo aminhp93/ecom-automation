@@ -1,58 +1,69 @@
-import { ecomStore, Product, WorkflowEvent, ProductValidation } from '../db/store';
-import { aiRouter } from '../ai/router';
+import {
+  ecomStore,
+  Product,
+  WorkflowEvent,
+  ProductValidation,
+} from "../db/store";
+import { aiRouter } from "../ai/router";
+import { validationSchema } from "./schemas";
+import { assertStageReady, commitStage } from "./pipeline";
 
 export type EventCallback = (event: WorkflowEvent) => void;
 
 export interface ValidationWorkflowOptions {
+  runId?: string;
+  startedAt?: string;
   productId: string;
   onEvent?: EventCallback;
 }
 
 export async function runProductValidationWorkflow(
-  options: ValidationWorkflowOptions
+  options: ValidationWorkflowOptions,
 ): Promise<{ product: Product; validation: ProductValidation }> {
   const product = ecomStore.getProductById(options.productId);
   if (!product) {
     throw new Error(`Product not found: ${options.productId}`);
   }
 
-  const emit = (type: WorkflowEvent['type'], message: string, data?: any) => {
+  assertStageReady(product, "02");
+
+  const runId = options.runId ?? `wf_run_02_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const startedAt = options.startedAt ?? new Date().toISOString();
+  const workflowEvents: WorkflowEvent[] = [];
+
+  const emit = (type: WorkflowEvent["type"], message: string, data?: any) => {
     const event: WorkflowEvent = {
       id: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       timestamp: new Date().toLocaleTimeString(),
       type,
-      stage: '02_PRODUCT_VALIDATION',
+      stage: "02_PRODUCT_VALIDATION",
       message,
       data,
     };
+    workflowEvents.push(event);
     if (options.onEvent) {
       options.onEvent(event);
     }
   };
 
-  emit('info', `🚀 Bắt đầu Stage 02: Xác thực chuyên sâu sản phẩm "${product.name}"...`);
+  emit(
+    "info",
+    `🚀 Bắt đầu Stage 02: Thẩm định chuyên sâu sản phẩm "${product.name}"...`,
+  );
 
-  // Step 1: Check Search & Social Trend Momentum
-  emit('search', `🔎 Kiểm tra tín hiệu Google Trends và khối lượng tìm kiếm 90 ngày gần nhất...`);
-  await new Promise((r) => setTimeout(r, 600));
-
-  const trendGrowth = Math.floor(120 + Math.random() * 160);
-  emit('found', `✓ Tín hiệu Trend: Xu hướng tìm kiếm tăng +${trendGrowth}% YoY. Độ quan tâm ổn định.`);
-
-  // Step 2: Competitor Ad Saturation & Longevity
-  emit('search', `🔎 Quét Meta Ads Library & TikTok Creative Center để đo lường độ bão hòa đối thủ...`);
-  await new Promise((r) => setTimeout(r, 700));
-
-  const activeAds = Math.floor(18 + Math.random() * 25);
-  const avgLongevity = Math.floor(14 + Math.random() * 20);
-  emit('found', `✓ Phát hiện ${activeAds} quảng cáo đang hoạt động. Có các chiến dịch chạy > ${avgLongevity} ngày (chứng minh đang sinh lời).`);
-
-  // Step 3: AI Sentiment Mining on Negative Reviews
-  emit('ai_analyze', `🤖 AI Worker (Gemini Flash) đang phân tích 100 review 1-3 sao trên Amazon & AliExpress để tìm lỗ hổng sản phẩm...`);
+  emit(
+    "info",
+    "Chưa kết nối nguồn Google Trends, Ads Library hoặc reviews. Các chỉ số thực tế để trống; AI chỉ đề xuất giả thuyết cần kiểm chứng.",
+  );
+  emit(
+    "ai_analyze",
+    "Đang lập bản nháp phân tích rủi ro, không phải kết quả khảo sát thị trường.",
+  );
 
   const prompt = `
 Bạn là chuyên gia phân tích chất lượng sản phẩm E-commerce.
 Hãy bóc tách các vấn đề thường gặp và nỗi thất vọng của người mua về sản phẩm: "${product.name}" (${product.category}).
+Đề xuất 3 giả thuyết rủi ro và cách kiểm chứng. Không có review hay dữ liệu thị trường được cung cấp; không bịa tần suất, thống kê hay bằng chứng có lợi nhuận. Ghi frequency là "Chưa có dữ liệu".
 Trả về JSON định dạng:
 {
   "trend_status": "surging",
@@ -64,61 +75,72 @@ Trả về JSON định dạng:
   ],
   "validation_score": 88,
   "verdict": "GO",
-  "verdict_reason": "Lý do súc tích cho phán quyết Go/No-Go"
+  "verdict_reason": "Lý do súc tích cho phán quyết"
 }
+
+"verdict" BẮT BUỘC là một trong 3 giá trị:
+- "GO": tín hiệu nhu cầu + độ bền ads mạnh, validation_score >= 75, nên test ngay.
+- "CONDITIONAL_GO": có tiềm năng nhưng còn rủi ro (sentiment trung bình, ads biến động, review lỗi nặng), validation_score khoảng 60-74, cần kiểm chứng thêm trước khi chi tiền tìm nguồn hàng.
+- "NO_GO": rủi ro cao (nhu cầu yếu, quá bão hòa, lỗi sản phẩm không khắc phục được), validation_score < 60, nên dừng.
 `;
 
-  let validationData: ProductValidation;
-  try {
-    const aiRes = await aiRouter.run({
-      task: 'market_extraction',
-      prompt,
-      systemPrompt: 'Trả lời JSON hợp lệ phân tích rủi ro sản phẩm.',
-      jsonMode: true,
-    });
+  const aiRes = await aiRouter.run({
+    task: "market_extraction",
+    prompt,
+    systemPrompt: "Trả lời JSON hợp lệ phân tích rủi ro sản phẩm.",
+    jsonMode: true,
+    workflowRunId: runId,
+  });
+  const parsed = validationSchema.parse(aiRes.data);
+  const validationData: ProductValidation = {
+    ...parsed,
+    trend_growth_pct: null,
+    active_competitor_ads: null,
+    ads_longevity_days: null,
+    negative_reviews_mined: parsed.negative_reviews_mined.map((review) => ({
+      ...review,
+      frequency: "Chưa có dữ liệu",
+    })),
+    verdict:
+      parsed.verdict === "NO_GO" || parsed.validation_score < 60
+        ? "NO_GO"
+        : "CONDITIONAL_GO",
+    verdict_reason: `Chưa xác minh nguồn; chỉ dùng lập kế hoạch. ${parsed.verdict_reason}`,
+    data_quality: aiRes.provider === "mock" ? "mock" : "unverified",
+    requires_review: true,
+  };
 
-    if (aiRes.data && aiRes.data.negative_reviews_mined) {
-      validationData = {
-        trend_status: aiRes.data.trend_status || 'surging',
-        trend_growth_pct: trendGrowth,
-        active_competitor_ads: activeAds,
-        ads_longevity_days: avgLongevity,
-        review_sentiment_score: Number(aiRes.data.review_sentiment_score) || 82,
-        negative_reviews_mined: aiRes.data.negative_reviews_mined,
-        validation_score: Number(aiRes.data.validation_score) || 88,
-        verdict: (aiRes.data.verdict as any) || 'GO',
-        verdict_reason: aiRes.data.verdict_reason || 'Tỷ lệ đơn hàng và thời gian chạy ads của đối thủ chứng minh nhu cầu thực tế rất lớn.',
-      };
-    } else {
-      throw new Error('Incomplete JSON');
-    }
-  } catch (e) {
-    validationData = {
-      trend_status: 'surging',
-      trend_growth_pct: trendGrowth,
-      active_competitor_ads: activeAds,
-      ads_longevity_days: avgLongevity,
-      review_sentiment_score: 83,
-      negative_reviews_mined: [
-        { issue: 'Chất liệu bị mòn nhanh sau vài tuần sử dụng', frequency: '22%', workaround: 'Sử dụng chất liệu silicone gia cường cao cấp có chứng nhận an toàn' },
-        { issue: 'Thời gian làm mát/giữ nhiệt chưa đạt kỳ vọng', frequency: '16%', workaround: 'Nhấn mạnh công nghệ lõi nhiệt làm lạnh nhanh 15 phút' },
-        { issue: 'Bao bì sơ sài khi nhận hàng', frequency: '14%', workaround: 'Thiết kế túi zip bảo quản vệ sinh đi kèm miễn phí' }
-      ],
-      validation_score: 89,
-      verdict: 'GO',
-      verdict_reason: 'Nhu cầu thị trường đang tăng trưởng mạnh, đối thủ chạy ads lâu dài chứng minh có lợi nhuận bền vững.'
-    };
-  }
-
-  // Update product in store
-  product.validation = validationData;
-  ecomStore.saveProduct(product);
-
-  emit('score', `🏆 Phán quyết Stage 02: [${validationData.verdict}] với Điểm xác thực ${validationData.validation_score}/100.`, {
-    validation: validationData,
+  // Persist transactionally so a concurrent stage run cannot clobber this write
+  const saved = commitStage(product, "02", (p) => {
+    p.validation = validationData;
+    p.pipeline_stage = "02_VALIDATION";
   });
 
-  emit('done', `🎉 Hoàn thành Stage 02 (Product Validation)! Sẵn sàng bước sang Stage 03: Competitor Research.`);
+  // Save workflow run record for persistence
+  ecomStore.saveWorkflowRun({
+    id: runId,
+    workflow: "02_PRODUCT_VALIDATION",
+    niche: product.niche,
+    status: "completed",
+    progress: 100,
+    started_at: startedAt,
+    completed_at: new Date().toISOString(),
+    logs: workflowEvents,
+    discovered_count: 1,
+  });
 
-  return { product, validation: validationData };
+  emit(
+    "score",
+    `🏆 Phán quyết Stage 02: [${validationData.verdict}] với Điểm xác thực ${validationData.validation_score}/100.`,
+    {
+      validation: validationData,
+    },
+  );
+
+  emit(
+    "done",
+    `🎉 Hoàn thành Stage 02 (Product Validation)! Sẵn sàng bước sang Stage 03: Competitor Research.`,
+  );
+
+  return { product: saved, validation: validationData };
 }
