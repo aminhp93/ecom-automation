@@ -9,6 +9,7 @@ interface ProductTableProps {
   onSelectProduct: (product: Product) => void;
   onApproveProduct: (productId: string) => void;
   isApprovingId?: string;
+  onGoToStage02?: (productId: string) => void;
 }
 
 export const ProductTable: React.FC<ProductTableProps> = ({
@@ -16,6 +17,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onSelectProduct,
   onApproveProduct,
   isApprovingId,
+  onGoToStage02,
 }) => {
   if (products.length === 0) {
     return (
@@ -159,14 +161,19 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                         <button
                           onClick={() => onApproveProduct(p.id)}
                           disabled={isApprovingId === p.id}
-                          className="px-2.5 py-0.5 rounded-md bg-black text-white hover:bg-zinc-800 text-[11px] font-medium transition shadow-2xs"
+                          className="px-2.5 py-1 rounded-md bg-black text-white hover:bg-zinc-800 text-[11px] font-medium transition shadow-2xs"
                         >
                           Duyệt
                         </button>
                       ) : (
-                        <span className="text-[11px] text-zinc-400 font-mono">
-                          Ready Stg 02
-                        </span>
+                        <button
+                          onClick={() => onGoToStage02 && onGoToStage02(p.id)}
+                          className="px-2.5 py-1 rounded-md bg-zinc-900 text-white hover:bg-black text-[11px] font-medium transition flex items-center gap-1 shadow-2xs"
+                          title="Chuyển sang Stage 02 Validation"
+                        >
+                          <span>Stage 02</span>
+                          <span>→</span>
+                        </button>
                       )}
                     </div>
                   </td>

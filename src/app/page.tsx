@@ -355,6 +355,10 @@ export default function EcomOSDashboard() {
                   onSelectProduct={(p) => setSelectedProduct(p)}
                   onApproveProduct={handleApproveProduct}
                   isApprovingId={isApprovingId}
+                  onGoToStage02={(productId) => {
+                    setActiveWorkingProductId(productId);
+                    setCurrentStage('02');
+                  }}
                 />
               </>
             )}
@@ -436,6 +440,11 @@ export default function EcomOSDashboard() {
         onClose={() => setSelectedProduct(null)}
         onApprove={handleApproveProduct}
         isApproving={isApprovingId === selectedProduct?.id}
+        onGoToStage02={(productId) => {
+          setActiveWorkingProductId(productId);
+          setSelectedProduct(null);
+          setCurrentStage('02');
+        }}
       />
 
       {/* Add Custom Product Modal */}

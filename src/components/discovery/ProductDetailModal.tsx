@@ -9,6 +9,7 @@ interface ProductDetailModalProps {
   onClose: () => void;
   onApprove: (productId: string) => void;
   isApproving: boolean;
+  onGoToStage02?: (productId: string) => void;
 }
 
 export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
@@ -16,6 +17,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   onClose,
   onApprove,
   isApproving,
+  onGoToStage02,
 }) => {
   if (!product) return null;
 
@@ -210,9 +212,20 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 <ArrowRight className="w-3 h-3" />
               </button>
             ) : (
-              <div className="px-3 py-1.5 rounded-md bg-zinc-200 text-zinc-800 flex items-center gap-1.5 font-mono text-xs font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Approved</span>
+              <div className="flex items-center gap-2">
+                <div className="px-2.5 py-1.5 rounded-md bg-zinc-100 text-zinc-800 flex items-center gap-1.5 font-mono text-xs font-medium border border-zinc-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-zinc-700" />
+                  <span>Đã Duyệt</span>
+                </div>
+                {onGoToStage02 && (
+                  <button
+                    onClick={() => onGoToStage02(product.id)}
+                    className="px-3.5 py-1.5 rounded-md bg-black text-white font-medium text-xs flex items-center gap-1.5 hover:bg-zinc-800 transition shadow-2xs"
+                  >
+                    <span>Đi Tới Stage 02 (Validation)</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </button>
+                )}
               </div>
             )}
           </div>
