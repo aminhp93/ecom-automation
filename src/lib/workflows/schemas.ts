@@ -104,6 +104,84 @@ export const offerSchema = z.object({
   urgency_hook: text,
 });
 
+const awarenessLevel = z.enum([
+  "unaware",
+  "problem_aware",
+  "solution_aware",
+  "product_aware",
+  "most_aware",
+]);
+
+export const angleHookSchema = z.object({
+  variation: z.enum(["A", "B", "C"]),
+  platform: z.enum(["tiktok", "meta", "both"]),
+  spoken_hook: text,
+  visual_first_frame: text,
+  on_screen_text: text,
+  why_it_stops_scroll: text,
+});
+
+export const marketingAngleSchema = z.object({
+  id: z.number().int().positive(),
+  name: text,
+  sub_audience: text,
+  core_emotion: text,
+  belief_to_shift: text,
+  promise: text,
+  proof_needed: text,
+  awareness_level: awarenessLevel,
+  recommended_format: text,
+  hooks: z.array(angleHookSchema).min(1),
+  source_evidence: text.optional(),
+});
+
+export const ugcScriptSchema = z.object({
+  angle_id: z.number().int().nonnegative(),
+  angle_name: text,
+  creator_persona: text,
+  framework: text,
+  target_length: text,
+  hook_line: text,
+  scenes: z
+    .array(
+      z.object({
+        time: text,
+        visual: text,
+        spoken: text,
+        on_screen_text: text,
+      }),
+    )
+    .min(1),
+  cta_line: text,
+  b_roll_shot_list: z.array(text).min(1),
+  compliance_flags: z.array(
+    z.object({ claim: text, risk: text, compliant_rewrite: text }),
+  ),
+});
+
+export const staticConceptSchema = z.object({
+  angle_id: z.number().int().nonnegative(),
+  format: z.enum(["single_image", "carousel", "before_after", "meme_ugc"]),
+  concept: text,
+  headline: text,
+  primary_text: text,
+});
+
+export const testPlanSchema = z.object({
+  first_angle_id: z.number().int().nonnegative(),
+  first_angle_rationale: text,
+  daily_budget_per_ad_set: money.positive(),
+  ad_set_count: z.number().int().positive(),
+  test_window_days: z.number().int().positive(),
+  kill_rules: z
+    .array(z.object({ metric: text, threshold: text, action: text }))
+    .min(1),
+  scale_rule: text,
+  iteration_note: text,
+});
+
+export const complianceSummarySchema = z.array(text).min(1);
+
 export const creativeSchema = z.object({
   viral_hooks: z
     .array(
@@ -141,4 +219,10 @@ export const creativeSchema = z.object({
     faqs: z.array(z.object({ q: text, a: text })).min(1),
     html_description: text,
   }),
+  // Angle-driven creative system (optional — the reworked Stage 06 populates these)
+  angle_briefs: z.array(marketingAngleSchema).optional(),
+  ugc_scripts: z.array(ugcScriptSchema).optional(),
+  static_concepts: z.array(staticConceptSchema).optional(),
+  test_plan: testPlanSchema.optional(),
+  compliance_summary: z.array(text).optional(),
 });

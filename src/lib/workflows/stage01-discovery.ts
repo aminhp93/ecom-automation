@@ -1,7 +1,60 @@
-import { ecomStore, Product, WorkflowEvent, WorkflowRun } from "../db/store";
+import {
+  ecomStore,
+  Product,
+  WorkflowEvent,
+  WorkflowRun,
+  MarketingAngle,
+} from "../db/store";
 import { searchRawCandidates, RawProductCandidate } from "../tools/scraper";
-import { calculateFinancials, calculateProductScore, scoreOrDefault } from "../tools/scoring";
+import {
+  calculateFinancials,
+  calculateProductScore,
+  scoreOrDefault,
+} from "../tools/scoring";
+import { marketingAngleSchema } from "./schemas";
 import { aiRouter } from "../ai/router";
+
+const MIN_DOLLAR_MARGIN = 12; // below this, cold paid-social CAC eats the whole margin
+const SAFE_DOLLAR_MARGIN = 18; // thin but workable if a bundle lifts AOV
+
+/** Build 3 conservative, structured angles from the mined pain points when the AI gives none. */
+function buildFallbackAngles(painPoints: string[]): MarketingAngle[] {
+  const seeds = painPoints.slice(0, 3);
+  while (seeds.length < 3) seeds.push("Giải pháp cũ bất tiện và tốn thời gian");
+  const emotions = [
+    "Bực bội, mệt mỏi",
+    "Lo lắng, mất niềm tin",
+    "Tò mò, muốn thử",
+  ];
+  const formats = [
+    "UGC talking-head + b-roll thao tác thật",
+    "So sánh cách cũ vs cách mới (không dàn dựng kết quả)",
+    "Founder / người dùng kể lại trải nghiệm",
+  ];
+  return seeds.map((pain, i) => ({
+    id: i + 1,
+    name: `Góc ${i + 1}: ${pain.slice(0, 48)}`,
+    sub_audience:
+      "Cần xác định tệp khách cụ thể (độ tuổi, hoàn cảnh, mức độ nhận thức) trước khi chạy.",
+    core_emotion: emotions[i],
+    belief_to_shift: "Phải chấp nhận sống chung với vấn đề này.",
+    promise:
+      "Xử lý được vấn đề nhanh hơn, gọn hơn — cần kiểm chứng bằng demo thật.",
+    proof_needed:
+      "Quay cảnh dùng thật theo hướng dẫn nhà sản xuất; không hứa kết quả/định lượng chưa có bằng chứng.",
+    awareness_level: "problem_aware" as const,
+    recommended_format: formats[i],
+    hooks: (["A", "B", "C"] as const).map((v, h) => ({
+      variation: v,
+      platform: (["tiktok", "meta", "both"] as const)[h],
+      spoken_hook: `(${v}) Cần viết lại cho cụ thể — thêm con số/mốc thời gian/tình huống chính xác về: "${pain.slice(0, 40)}"`,
+      visual_first_frame: "Cận cảnh khoảnh khắc vấn đề xảy ra (chưa dàn dựng).",
+      on_screen_text: "Chèn chữ bám sát lời thoại",
+      why_it_stops_scroll:
+        "Placeholder — hook fallback chưa đủ mạnh, cần người viết trau lại.",
+    })),
+  }));
+}
 
 export type EventCallback = (event: WorkflowEvent) => void;
 
@@ -121,7 +174,23 @@ Hãy trả về JSON với cấu trúc:
   "target_audience": "Chân dung khách hàng mục tiêu cụ thể",
   "pain_points": ["Nỗi đau 1", "Nỗi đau 2", "Nỗi đau 3"],
   "wow_factor": "Yếu tố tạo ấn tượng tức thì trong 3 giây đầu video",
-  "angles": ["Góc quảng cáo 1 (Problem)", "Góc quảng cáo 2 (Before/After)", "Góc quảng cáo 3 (Testimonial)"],
+  "marketing_angles": [
+    {
+      "name": "Tên góc ngắn (VD: 'Mất ngủ 2h sáng')",
+      "sub_audience": "Tệp khách hàng con CỤ THỂ mà góc này nhắm tới (tuổi, hoàn cảnh)",
+      "core_emotion": "Cảm xúc lõi hook phải chạm (tuyệt vọng / ghê sợ / tò mò / ghen tị...)",
+      "belief_to_shift": "Niềm tin cũ mà quảng cáo phải phá vỡ",
+      "promise": "Lời hứa của góc này với người mua",
+      "proof_needed": "Bằng chứng creative BẮT BUỘC phải cho thấy (demo, so sánh, review...)",
+      "awareness_level": "unaware | problem_aware | solution_aware | product_aware | most_aware",
+      "recommended_format": "VD: UGC talking-head + b-roll",
+      "hooks": [
+        { "variation": "A", "platform": "tiktok", "spoken_hook": "Câu nói ĐẦU TIÊN, khẩu ngữ, CỤ THỂ (có con số / mốc thời gian / tình huống chính xác)", "visual_first_frame": "Hình lấp đầy frame 1 — pattern interrupt", "on_screen_text": "Chữ overlay", "why_it_stops_scroll": "Vì sao nó chặn ngón tay đang lướt" },
+        { "variation": "B", "platform": "meta", "spoken_hook": "...", "visual_first_frame": "...", "on_screen_text": "...", "why_it_stops_scroll": "..." },
+        { "variation": "C", "platform": "both", "spoken_hook": "...", "visual_first_frame": "...", "on_screen_text": "...", "why_it_stops_scroll": "..." }
+      ]
+    }
+  ],
   "demand_score": 85,
   "competition_score": 65,
   "creative_score": 90,
@@ -129,6 +198,12 @@ Hãy trả về JSON với cấu trúc:
   "shipping_score": 90
 }
 Điểm số đánh giá từ 0 đến 100.
+
+QUAN TRỌNG về "marketing_angles":
+- Trả về 3-4 GÓC KHÁC NHAU: khác tệp khách hàng, khác cảm xúc lõi, khác niềm tin cần phá. Đây là các "lý do mua" độc lập để test đối đầu nhau.
+- "Góc" KHÔNG phải là format. "Problem / Before-After / Testimonial / PAS" là CÁCH KỂ, không phải góc — đừng dùng chúng làm tên góc.
+- Mỗi góc có đúng 3 hook (A/B/C). Hook phải cụ thể trần trụi, không dùng câu chung chung kiểu "nếu bạn đang chật vật với vấn đề này".
+- Không suy ra công dụng y tế / độ an toàn / số liệu từ tên sản phẩm. Nếu thiếu bằng chứng, ghi rõ trong "proof_needed".
 `;
 
     let aiResult: any = null;
@@ -170,11 +245,6 @@ Hãy trả về JSON với cấu trúc:
       "Chất lượng sản phẩm cũ không đảm bảo",
     ];
     const fallbackWow = "Hiệu quả rõ rệt tức thì trong video minh họa thực tế.";
-    const fallbackAngles = [
-      "Góc 1: Vấn đề nhức nhối thường gặp",
-      "Góc 2: So sánh trước và sau khi sử dụng",
-      "Góc 3: Trải nghiệm thực tế của người dùng",
-    ];
 
     const category = aiResult?.category || fallbackCategory;
     const targetAudience = aiResult?.target_audience || fallbackAudience;
@@ -182,9 +252,27 @@ Hãy trả về JSON với cấu trúc:
       ? aiResult.pain_points
       : fallbackPainPoints;
     const wowFactor = aiResult?.wow_factor || fallbackWow;
-    const angles = Array.isArray(aiResult?.angles)
-      ? aiResult.angles
-      : fallbackAngles;
+
+    // Structured angles — validate each; keep only well-formed ones. "Angle" = reason-to-buy, not a format.
+    const rawAngles: any[] = Array.isArray(aiResult?.marketing_angles)
+      ? aiResult.marketing_angles
+      : [];
+    const parsedAngles: MarketingAngle[] = rawAngles
+      .map((a, i) => {
+        const r = marketingAngleSchema.safeParse({ ...a, id: a?.id ?? i + 1 });
+        return r.success ? r.data : null;
+      })
+      .filter((a): a is MarketingAngle => a !== null)
+      .slice(0, 5);
+    const marketingAngles =
+      parsedAngles.length >= 2 ? parsedAngles : buildFallbackAngles(painPoints);
+    if (parsedAngles.length < 2) {
+      emit(
+        "info",
+        `  ↳ ⚠️ AI không trả về góc bán có cấu trúc hợp lệ — dùng góc dự phòng (cần người viết trau lại hook).`,
+      );
+    }
+    const angles = marketingAngles.map((a) => a.name);
 
     // Unit Economics & Financials
     const financials = calculateFinancials({
@@ -212,6 +300,29 @@ Hãy trả về JSON với cấu trúc:
       problem: probScore,
       shipping: shipScore,
     });
+
+    // Hard gates for "will this actually make money on paid social", independent of the AI score.
+    let gatedRecommendation = scoring.recommendation;
+    let gatedReason = scoring.recommendation_reason;
+    if (
+      financials.gross_margin < MIN_DOLLAR_MARGIN &&
+      gatedRecommendation !== "KILL"
+    ) {
+      gatedRecommendation = "KILL";
+      gatedReason = `Lãi gộp $${financials.gross_margin}/đơn < $${MIN_DOLLAR_MARGIN}. CAC cold traffic trên Meta/TikTok thường $15-40 nên biên này không chạy paid ads có lãi được — cần tăng giá bán hoặc hạ giá vốn.`;
+    } else if (
+      financials.gross_margin < SAFE_DOLLAR_MARGIN &&
+      gatedRecommendation === "TEST"
+    ) {
+      gatedRecommendation = "CONSIDER";
+      gatedReason = `${scoring.recommendation_reason} ⚠️ Lãi gộp $${financials.gross_margin}/đơn còn mỏng (< $${SAFE_DOLLAR_MARGIN}); chỉ test nếu bundle nâng được AOV.`;
+    }
+    const adSignal = Number(candidate.platform_signals?.active_ads) || 0;
+    const salesSignal = Number(candidate.platform_signals?.orders_30d) || 0;
+    if (adSignal === 0 && salesSignal === 0 && gatedRecommendation === "TEST") {
+      gatedRecommendation = "CONSIDER";
+      gatedReason += ` ⚠️ Chưa có tín hiệu đối thủ chạy ads hoặc đơn hàng thực tế — kiểm chứng cầu (Meta Ad Library / doanh số) trước khi đổ ngân sách test.`;
+    }
 
     // Deduplication check against existing products
     const existingList = ecomStore.getProducts();
@@ -275,15 +386,18 @@ Hãy trả về JSON với cấu trúc:
       status: existing?.status || "discovered",
       recommendation: isApprovedOrProgressed
         ? existing.recommendation
-        : scoring.recommendation,
+        : gatedRecommendation,
       recommendation_reason: isApprovedOrProgressed
         ? existing.recommendation_reason
-        : scoring.recommendation_reason,
+        : gatedReason,
 
       wow_factor: wowFactor,
       target_audience: targetAudience,
       pain_points: painPoints,
       angles,
+      marketing_angles: isApprovedOrProgressed
+        ? (existing.marketing_angles ?? marketingAngles)
+        : marketingAngles,
 
       // Preserve existing downstream stage artifacts if discovery is re-run
       validation: existing?.validation,

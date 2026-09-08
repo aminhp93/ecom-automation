@@ -6,7 +6,12 @@ export interface FinancialInputs {
 
 /** Missing/invalid AI scores use a conservative baseline; a valid zero stays zero. */
 export function scoreOrDefault(value: unknown, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100 ? value : fallback;
+  return typeof value === "number" &&
+    Number.isFinite(value) &&
+    value >= 0 &&
+    value <= 100
+    ? value
+    : fallback;
 }
 
 export interface FinancialOutputs {

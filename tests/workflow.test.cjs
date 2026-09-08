@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports -- CommonJS VM harness intentionally intercepts require() to isolate filesystem and AI. */
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -493,55 +494,175 @@ test("Product API rejects malformed prices before invoking AI", async () => {
   assert.equal(calls, 0);
 });
 
-test('Workflow API validates override types and records failed attempts', async () => {
-  const h=harness(fixture(),async()=>({viral_hooks:[]}));
-  const {POST}=h.load('src/app/api/workflows/run-stage/route.ts');
-  for(const body of [null,[],{productId:'p',stage:'12'},{productId:'p',stage:'03',allowNoGoOverride:'false'}]) {
-    assert.equal((await POST({json:async()=>body})).status,400);
+test("Workflow API validates override types and records failed attempts", async () => {
+  const h = harness(fixture(), async () => ({ viral_hooks: [] }));
+  const { POST } = h.load("src/app/api/workflows/run-stage/route.ts");
+  for (const body of [
+    null,
+    [],
+    { productId: "p", stage: "12" },
+    { productId: "p", stage: "03", allowNoGoOverride: "false" },
+  ]) {
+    assert.equal((await POST({ json: async () => body })).status, 400);
   }
-  const response=await POST({json:async()=>({productId:'p',stage:'06'})});
-  const events=await response.text();
+  const response = await POST({
+    json: async () => ({ productId: "p", stage: "06" }),
+  });
+  const events = await response.text();
   assert.ok(events.includes('"type":"error"'));
-  const runs=JSON.parse(h.files.get(h.storeFile)).workflow_runs;
-  assert.equal(runs.length,1); assert.equal(runs[0].status,'failed');
-  assert.ok(runs[0].completed_at); assert.equal(h.store.getProductById('p').revision,1);
+  const runs = JSON.parse(h.files.get(h.storeFile)).workflow_runs;
+  assert.equal(runs.length, 1);
+  assert.equal(runs[0].status, "failed");
+  assert.ok(runs[0].completed_at);
+  assert.equal(h.store.getProductById("p").revision, 1);
 });
-test('Workflow API success has one run ID, accurate logs and no automatic launch', async () => {
-  const h=harness(fixture(),async()=>creative);
-  const {POST}=h.load('src/app/api/workflows/run-stage/route.ts');
-  const response=await POST({json:async()=>({productId:'p',stage:'06'})});
+test("Workflow API success has one run ID, accurate logs and no automatic launch", async () => {
+  const h = harness(fixture(), async () => creative);
+  const { POST } = h.load("src/app/api/workflows/run-stage/route.ts");
+  const response = await POST({
+    json: async () => ({ productId: "p", stage: "06" }),
+  });
   await response.text();
-  const runs=JSON.parse(h.files.get(h.storeFile)).workflow_runs;
-  assert.equal(runs.length,1); assert.equal(runs[0].status,'completed');
-  assert.ok(runs[0].logs.some(e=>e.type==='done'));
-  assert.notEqual(h.store.getProductById('p').pipeline_stage,'LAUNCH_READY');
+  const runs = JSON.parse(h.files.get(h.storeFile)).workflow_runs;
+  assert.equal(runs.length, 1);
+  assert.equal(runs[0].status, "completed");
+  assert.ok(runs[0].logs.some((e) => e.type === "done"));
+  assert.notEqual(h.store.getProductById("p").pipeline_stage, "LAUNCH_READY");
 });
-test('Discovery rerun deduplicates without overwriting existing product or revision', async () => {
-  const h=harness(fixture(),async()=>({demand_score:0,competition_score:0,creative_score:0,problem_score:0,shipping_score:0}));
-  const run=h.load('src/lib/workflows/stage01-discovery.ts').runProductDiscoveryWorkflow;
-  await run({niche:'baby'});
-  const before=JSON.stringify(h.store.getProducts());
-  await run({niche:'baby'});
-  assert.equal(JSON.stringify(h.store.getProducts()),before);
-  const generated=h.store.getProducts().find(p=>p.id!=='p');
-  assert.equal(generated.demand_score,0); assert.equal(generated.shipping_score,0);
+test("Discovery rerun deduplicates without overwriting existing product or revision", async () => {
+  const h = harness(fixture(), async () => ({
+    demand_score: 0,
+    competition_score: 0,
+    creative_score: 0,
+    problem_score: 0,
+    shipping_score: 0,
+  }));
+  const run = h.load(
+    "src/lib/workflows/stage01-discovery.ts",
+  ).runProductDiscoveryWorkflow;
+  await run({ niche: "baby" });
+  const before = JSON.stringify(h.store.getProducts());
+  await run({ niche: "baby" });
+  assert.equal(JSON.stringify(h.store.getProducts()), before);
+  const generated = h.store.getProducts().find((p) => p.id !== "p");
+  assert.equal(generated.demand_score, 0);
+  assert.equal(generated.shipping_score, 0);
 });
-test('Provider fallback tries remaining live providers when primary and secondary fail', async () => {
-  const calls=[];
-  const source=fs.readFileSync(path.join(root,'src/lib/ai/router.ts'),'utf8');
-  const result={provider:'claude',model:'test',data:{ok:true},usage:{inputTokens:0,outputTokens:0,totalTokens:0},costUsd:0,latencyMs:0};
-  const provider=name=>class {
-    constructor(){this.name=name;this.defaultModel='test';}
-    isAvailable(){return true;}
-    async generate(){calls.push(name); if(name==='gemini') throw new Error('offline'); if(name==='openai') return {...result,data:undefined}; return result;}
+test("Provider fallback tries remaining live providers when primary and secondary fail", async () => {
+  const calls = [];
+  const source = fs.readFileSync(
+    path.join(root, "src/lib/ai/router.ts"),
+    "utf8",
+  );
+  const result = {
+    provider: "claude",
+    model: "test",
+    data: { ok: true },
+    usage: { inputTokens: 0, outputTokens: 0, totalTokens: 0 },
+    costUsd: 0,
+    latencyMs: 0,
   };
-  const classes={gemini:provider('gemini'),openai:provider('openai'),claude:provider('claude'),mock:provider('mock')};
-  const mod={exports:{}};
-  const code=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-  vm.runInNewContext(code,{module:mod,exports:mod.exports,console:{warn(){}},require:name=>{
-    const id=name.split('/').at(-1); return {[id[0].toUpperCase()+id.slice(1)+'Provider']:classes[id],OpenAIProvider:classes.openai};
-  }});
-  const router=new mod.exports.AIRouter();
-  const response=await router.run({task:'market_extraction',prompt:'test',jsonMode:true,skipAutoLog:true});
-  assert.equal(response.provider,'claude'); assert.deepEqual(calls,['gemini','openai','claude']);
+  const provider = (name) =>
+    class {
+      constructor() {
+        this.name = name;
+        this.defaultModel = "test";
+      }
+      isAvailable() {
+        return true;
+      }
+      async generate() {
+        calls.push(name);
+        if (name === "gemini") throw new Error("offline");
+        if (name === "openai") return { ...result, data: undefined };
+        return result;
+      }
+    };
+  const classes = {
+    gemini: provider("gemini"),
+    openai: provider("openai"),
+    claude: provider("claude"),
+    mock: provider("mock"),
+  };
+  const mod = { exports: {} };
+  const code = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      target: ts.ScriptTarget.ES2022,
+    },
+  }).outputText;
+  vm.runInNewContext(code, {
+    module: mod,
+    exports: mod.exports,
+    console: { warn() {} },
+    require: (name) => {
+      const id = name.split("/").at(-1);
+      return {
+        [id[0].toUpperCase() + id.slice(1) + "Provider"]: classes[id],
+        OpenAIProvider: classes.openai,
+      };
+    },
+  });
+  const router = new mod.exports.AIRouter();
+  const response = await router.run({
+    task: "market_extraction",
+    prompt: "test",
+    jsonMode: true,
+    skipAutoLog: true,
+  });
+  assert.equal(response.provider, "claude");
+  assert.deepEqual(calls, ["gemini", "openai", "claude"]);
+});
+
+test("Discovery always attaches structured marketing_angles (falls back if AI gives none)", async () => {
+  const h = harness(fixture(), async () => ({
+    demand_score: 60,
+    competition_score: 60,
+    creative_score: 60,
+    problem_score: 60,
+    shipping_score: 60,
+  }));
+  const run = h.load(
+    "src/lib/workflows/stage01-discovery.ts",
+  ).runProductDiscoveryWorkflow;
+  await run({ niche: "baby" });
+  const generated = h.store.getProducts().find((p) => p.id !== "p");
+  assert.ok(
+    Array.isArray(generated.marketing_angles) &&
+      generated.marketing_angles.length >= 2,
+  );
+  for (const a of generated.marketing_angles) {
+    assert.ok(a.name && a.sub_audience && a.awareness_level);
+    assert.ok(Array.isArray(a.hooks) && a.hooks.length === 3);
+  }
+  assert.deepEqual(
+    generated.angles,
+    generated.marketing_angles.map((a) => a.name),
+  );
+});
+
+test("Stage06 fallback produces angle-keyed UGC scripts, a test plan and compliance notes", async () => {
+  const h = harness();
+  const { creativePack: c } = await h.run("06")({ productId: "p" });
+  assert.ok(Array.isArray(c.ugc_scripts) && c.ugc_scripts.length >= 1);
+  assert.ok(Array.isArray(c.angle_briefs) && c.angle_briefs.length >= 1);
+  const angleIds = new Set(c.angle_briefs.map((a) => a.id));
+  for (const s of c.ugc_scripts) assert.ok(angleIds.has(s.angle_id));
+  assert.ok(c.test_plan && c.test_plan.kill_rules.length >= 1);
+  assert.ok(
+    Array.isArray(c.compliance_summary) && c.compliance_summary.length >= 1,
+  );
+  assert.equal(c.requires_review, true);
+  // core legacy fields still present for back-compat
+  assert.ok(c.viral_hooks.length >= 1 && c.video_scripts.length >= 1);
+});
+
+test("Stage06 keeps working for legacy products that only have flat angles", async () => {
+  const p = fixture();
+  delete p.marketing_angles;
+  p.angles = ["Sleepless nights", "Hygiene concern"];
+  const h = harness(p);
+  const { creativePack: c } = await h.run("06")({ productId: "p" });
+  assert.ok(c.ugc_scripts.length >= 1);
+  assert.ok(c.angle_briefs.every((a) => a.name && a.hooks.length === 3));
 });

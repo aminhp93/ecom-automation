@@ -9,8 +9,11 @@ import { randomUUID } from "node:crypto";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return Response.json({ error: 'Body phải là JSON object.' }, { status: 400 });
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json(
+      { error: "Body phải là JSON object." },
+      { status: 400 },
+    );
   }
   const { productId, stage, allowNoGoOverride } = body;
 
@@ -31,10 +34,20 @@ export async function POST(req: NextRequest) {
 
   const encoder = new TextEncoder();
   const product = ecomStore.getProductById(productId);
-  if (!product) return Response.json({ error: "Không tìm thấy sản phẩm." }, { status: 404 });
+  if (!product)
+    return Response.json(
+      { error: "Không tìm thấy sản phẩm." },
+      { status: 404 },
+    );
   const run: WorkflowRun = {
-    id: randomUUID(), workflow: `STAGE_${stage}`, niche: product.niche,
-    status: "running", progress: 0, started_at: new Date().toISOString(), logs: [], discovered_count: 0,
+    id: randomUUID(),
+    workflow: `STAGE_${stage}`,
+    niche: product.niche,
+    status: "running",
+    progress: 0,
+    started_at: new Date().toISOString(),
+    logs: [],
+    discovered_count: 0,
   };
 
   const stream = new ReadableStream({
@@ -60,7 +73,12 @@ export async function POST(req: NextRequest) {
 
       try {
         ecomStore.saveWorkflowRun(run);
-        const options = { productId, onEvent: sendEvent, runId: run.id, startedAt: run.started_at };
+        const options = {
+          productId,
+          onEvent: sendEvent,
+          runId: run.id,
+          startedAt: run.started_at,
+        };
         if (stage === "02") {
           await runProductValidationWorkflow(options);
         } else if (stage === "03") {
@@ -94,10 +112,21 @@ export async function POST(req: NextRequest) {
         clearInterval(pingInterval);
         try {
           const completed = ecomStore.getWorkflowRun(run.id);
-          ecomStore.saveWorkflowRun({ ...run, discovered_count: completed?.discovered_count ?? 0, completed_at: new Date().toISOString() });
+          ecomStore.saveWorkflowRun({
+            ...run,
+            discovered_count: completed?.discovered_count ?? 0,
+            completed_at: new Date().toISOString(),
+          });
         } catch (error) {
           console.error("Không lưu được nhật ký workflow:", error);
-          sendEvent({ id: randomUUID(), timestamp: new Date().toISOString(), stage: `STAGE_${stage}`, type: "error", message: "Không lưu được nhật ký; cần kiểm tra store trước khi chạy lại." });
+          sendEvent({
+            id: randomUUID(),
+            timestamp: new Date().toISOString(),
+            stage: `STAGE_${stage}`,
+            type: "error",
+            message:
+              "Không lưu được nhật ký; cần kiểm tra store trước khi chạy lại.",
+          });
         }
         controller.close();
       }

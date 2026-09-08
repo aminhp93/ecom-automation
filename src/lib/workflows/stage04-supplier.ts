@@ -41,7 +41,9 @@ export async function runSupplierValidationWorkflow(
     );
   }
 
-  const runId = options.runId ?? `wf_run_04_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const runId =
+    options.runId ??
+    `wf_run_04_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   const startedAt = options.startedAt ?? new Date().toISOString();
   const workflowEvents: WorkflowEvent[] = [];
 

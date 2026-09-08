@@ -30,7 +30,9 @@ export async function runOfferCreationWorkflow(
     );
   }
 
-  const runId = options.runId ?? `wf_run_05_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const runId =
+    options.runId ??
+    `wf_run_05_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   const startedAt = options.startedAt ?? new Date().toISOString();
   const workflowEvents: WorkflowEvent[] = [];
 
@@ -67,6 +69,17 @@ export async function runOfferCreationWorkflow(
   const compGap = product.competitor_analysis.gap_identified;
   const priceOpp = product.competitor_analysis.price_opportunity;
 
+  // Steer the positioning toward the offer archetype that fits this product (economics stay deterministic).
+  const consumable =
+    /\b(oil|serum|cream|gel|refill|refills|supplement|capsule|drops|balm|spray|powder|tea)\b|dầu|tinh chất|kem|serum|viên|bột|trà|xịt|liều/i.test(
+      `${product.name} ${product.category}`,
+    );
+  const offerArchetype = consumable
+    ? "Sản phẩm TIÊU HAO (dùng hết mua lại): định vị nên nhấn mua nhiều để dùng dần / mô hình đăng ký định kỳ (Subscribe & Save) — KHÔNG phải Mua 1 Tặng 1."
+    : product.selling_price < 25
+      ? "AOV THẤP (<$25): định vị nên đẩy bundle 2-3 chiếc để nâng giá trị đơn và chạm ngưỡng miễn phí ship."
+      : "Sản phẩm BỀN, AOV khá: định vị hợp với bundle gia đình / mua để tặng.";
+
   const prompt = `
 Bạn là Alex Hormozi và David Ogilvy kết hợp trong E-commerce.
 Hãy thiết kế 1 "Grand Slam Offer" không thể chối từ cho sản phẩm sau, dựa trên dữ liệu đối thủ và chi phí thực tế:
@@ -78,6 +91,7 @@ Giá bán cơ bản: $${product.selling_price}
 Lợi thế đè bẹp đối thủ đã phân tích: "${compOutposition}"
 Khoảng trống thị trường bỏ quên: "${compGap}"
 Cơ hội định giá tốt nhất: "${priceOpp}"
+Kiểu offer phù hợp sản phẩm này: ${offerArchetype}
 Chi phí đầu vào chưa xác minh: vốn $${product.supplier_price}/chiếc, ship $${product.shipping_cost}/chiếc; phí thanh toán 2.9% + $0.30, dự phòng hoàn tiền 3%.
 BẮT BUỘC dùng nguyên các gói đã tính economics: ${JSON.stringify(safePackages)}.
 Không thêm quà, shipping hỏa tốc, số khách hàng, tồn kho, chứng nhận hay bảo hành chưa được xác nhận. Chỉ tạo bản nháp định vị.

@@ -27,7 +27,9 @@ export async function runProductValidationWorkflow(
 
   assertStageReady(product, "02");
 
-  const runId = options.runId ?? `wf_run_02_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const runId =
+    options.runId ??
+    `wf_run_02_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
   const startedAt = options.startedAt ?? new Date().toISOString();
   const workflowEvents: WorkflowEvent[] = [];
 

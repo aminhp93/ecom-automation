@@ -114,6 +114,87 @@ export interface VideoScript {
   scenes: SceneItem[];
 }
 
+/**
+ * Awareness stage of the sub-audience an angle targets (Eugene Schwartz).
+ * Drives how much problem education the creative must do before the pitch.
+ */
+export type AwarenessLevel =
+  | "unaware"
+  | "problem_aware"
+  | "solution_aware"
+  | "product_aware"
+  | "most_aware";
+
+export interface AngleHook {
+  variation: "A" | "B" | "C";
+  platform: "tiktok" | "meta" | "both";
+  spoken_hook: string; // first spoken line, conversational
+  visual_first_frame: string; // what fills frame 1 (the pattern interrupt)
+  on_screen_text: string;
+  why_it_stops_scroll: string;
+}
+
+/**
+ * A distinct reason-to-buy tied to ONE sub-audience — the unit you A/B test.
+ * NOT a format (Problem / Before-After / Testimonial are formats, not angles).
+ */
+export interface MarketingAngle {
+  id: number;
+  name: string; // "Mất ngủ 2h sáng"
+  sub_audience: string; // who exactly this speaks to
+  core_emotion: string; // the feeling the hook must land on
+  belief_to_shift: string; // the old belief the ad has to break
+  promise: string; // what this angle promises the buyer
+  proof_needed: string; // evidence the creative MUST show for this angle
+  awareness_level: AwarenessLevel;
+  recommended_format: string; // "UGC talking-head + b-roll", "Founder story"...
+  hooks: AngleHook[]; // 3 variations tested within the angle
+  source_evidence?: string; // verbatim review / comment this angle came from
+}
+
+export interface UGCScriptScene {
+  time: string;
+  visual: string; // shot direction, phone-shot / unpolished feel
+  spoken: string; // creator voiceover, conversational
+  on_screen_text: string;
+}
+
+export interface UGCScript {
+  angle_id: number;
+  angle_name: string;
+  creator_persona: string; // who films it and in what setting
+  framework: string; // PAS / Before-After / Founder story / 3 reasons
+  target_length: string;
+  hook_line: string; // opening line (one of the angle's hooks)
+  scenes: UGCScriptScene[];
+  cta_line: string;
+  b_roll_shot_list: string[]; // clips the creator must capture
+  compliance_flags: Array<{
+    claim: string;
+    risk: string;
+    compliant_rewrite: string;
+  }>;
+}
+
+export interface StaticAdConcept {
+  angle_id: number;
+  format: "single_image" | "carousel" | "before_after" | "meme_ugc";
+  concept: string; // the visual idea
+  headline: string;
+  primary_text: string; // Meta primary text
+}
+
+export interface CreativeTestPlan {
+  first_angle_id: number;
+  first_angle_rationale: string;
+  daily_budget_per_ad_set: number;
+  ad_set_count: number;
+  test_window_days: number;
+  kill_rules: Array<{ metric: string; threshold: string; action: string }>;
+  scale_rule: string;
+  iteration_note: string; // what to do with a winning angle
+}
+
 export interface CreativePack extends EvidenceMetadata {
   viral_hooks: Array<{
     id: number;
@@ -129,6 +210,12 @@ export interface CreativePack extends EvidenceMetadata {
     faqs: Array<{ q: string; a: string }>;
     html_description: string;
   };
+  // Angle-driven creative system (optional; populated by the reworked Stage 06)
+  angle_briefs?: MarketingAngle[];
+  ugc_scripts?: UGCScript[];
+  static_concepts?: StaticAdConcept[];
+  test_plan?: CreativeTestPlan;
+  compliance_summary?: string[];
 }
 
 export interface Product {
@@ -169,7 +256,8 @@ export interface Product {
   wow_factor: string;
   target_audience: string;
   pain_points: string[];
-  angles: string[];
+  angles: string[]; // flat angle names, kept for back-compat; source of truth is marketing_angles
+  marketing_angles?: MarketingAngle[]; // structured angles from the reworked Stage 01
 
   // Deep Pipeline Stages (Stages 02 -> 06/07)
   validation?: ProductValidation;
@@ -327,10 +415,128 @@ const SEED_PRODUCTS: Product[] = [
       "Đồ cắn răng bằng nhựa thường xuyên rơi xuống sàn bụi bẩn, phải đun sôi tiệt trùng hàng chục lần mỗi ngày",
     ],
     angles: [
-      "Góc 2:14 AM Wakeup (PAS): Cảnh mẹ bế con khóc trong đêm tối mệt mỏi vs Lướt nhẹ bi lăn mát lạnh ru con ngủ say sau 5 phút",
-      "Góc Vệ Sinh Không Chạm (No-Touch): Lăn bên ngoài viền hàm dưới — sạch sẽ 100%, không dính bẩn tay, không đưa vi khuẩn vào miệng con",
-      "Góc Đối Đầu CopaCalmer: Công thức thảo mộc hữu cơ Organic Camellia & Chamomile cao cấp hơn, giá $24.99 kèm BOGO 50% ($37.48/cặp) đè bẹp đối thủ $29.99",
-      "Góc Bác Sĩ Nhi (Pediatrician POV): Tại sao massage làm mát ngoài viền hàm là liệu pháp an toàn và hiệu quả nhất cho trẻ mọc răng",
+      "Mất ngủ 2h sáng",
+      "Không chạm tay vào miệng con",
+      "Không muốn dùng gel gây tê hoá chất",
+      "Bác sĩ nhi POV",
+    ],
+    marketing_angles: [
+      {
+        id: 1,
+        name: "Mất ngủ 2h sáng",
+        sub_audience: "Bố mẹ con 4-12 tháng, bị đánh thức nhiều đêm liên tiếp, kiệt sức",
+        core_emotion: "Tuyệt vọng, kiệt sức, thấy có lỗi vì cáu với con",
+        belief_to_shift: "Con mọc răng thì cả nhà phải chịu mất ngủ, rồi cũng qua",
+        promise: "Một cách dỗ con nhanh hơn để cả nhà ngủ tiếp",
+        proof_needed:
+          "Quay cảnh dùng thật lúc tối; không hứa số phút cụ thể hay 'ngủ ngay'",
+        awareness_level: "problem_aware",
+        recommended_format: "UGC talking-head mẹ quay trong phòng bé + b-roll",
+        source_evidence:
+          "Review 1-3 sao đối thủ: 'thức dậy 3-4 lần mỗi đêm', 'cả nhà kiệt sức'",
+        hooks: [
+          {
+            variation: "A",
+            platform: "tiktok",
+            spoken_hook:
+              "Cần viết cụ thể: mô tả đúng khoảnh khắc 2h sáng con thức giấc cào má",
+            visual_first_frame: "Đồng hồ 2:14, mẹ bế con trong phòng tối",
+            on_screen_text: "POV: đêm thứ 5 liên tiếp",
+            why_it_stops_scroll: "Bố mẹ mất ngủ nhận ra chính mình ngay giây đầu",
+          },
+          {
+            variation: "B",
+            platform: "meta",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Cận mặt bé nhăn nhó cắn tay",
+            on_screen_text: "Bám lời thoại",
+            why_it_stops_scroll: "Placeholder — cần trau",
+          },
+          {
+            variation: "C",
+            platform: "both",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Mẹ ngáp, quầng thâm mắt, pha sữa lúc rạng sáng",
+            on_screen_text: "Bám lời thoại",
+            why_it_stops_scroll: "Placeholder — cần trau",
+          },
+        ],
+      },
+      {
+        id: 2,
+        name: "Không chạm tay vào miệng con",
+        sub_audience: "Bố mẹ kỹ tính về vệ sinh, ngại thọc ngón tay bôi gel",
+        core_emotion: "Ghê, lo vi khuẩn",
+        belief_to_shift: "Bôi gel bằng ngón tay là bình thường",
+        promise: "Dùng bên ngoài viền hàm, không đưa gì vào miệng con",
+        proof_needed: "Demo thao tác lăn ngoài hàm; không khẳng định 'diệt khuẩn'",
+        awareness_level: "solution_aware",
+        recommended_format: "Demo cận cảnh + voiceover ngắn",
+        hooks: [
+          {
+            variation: "A",
+            platform: "tiktok",
+            spoken_hook: "Cần viết cụ thể hơn về thói quen thọc tay bôi gel",
+            visual_first_frame: "Tay đang vặn nắp tuýp gel rồi khựng lại",
+            on_screen_text: "Trước khi bôi gì vào miệng con...",
+            why_it_stops_scroll: "Chạm nỗi lo vệ sinh của bố mẹ kỹ tính",
+          },
+          {
+            variation: "B",
+            platform: "meta",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Hai cách đặt cạnh nhau",
+            on_screen_text: "Bám lời thoại",
+            why_it_stops_scroll: "Placeholder — cần trau",
+          },
+          {
+            variation: "C",
+            platform: "both",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Cận tay rửa xà phòng nhiều lần trong ngày",
+            on_screen_text: "Bám lời thoại",
+            why_it_stops_scroll: "Placeholder — cần trau",
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: "Không muốn dùng gel gây tê hoá chất",
+        sub_audience: "Bố mẹ ưu tiên tự nhiên, dè chừng hoạt chất bôi cho trẻ",
+        core_emotion: "Lo lắng, muốn kiểm soát cái gì chạm vào con",
+        belief_to_shift: "Gel bôi nướu là lựa chọn mặc định và an toàn",
+        promise: "Một lựa chọn không bôi hoạt chất gây tê vào miệng con",
+        proof_needed:
+          "Đối chiếu bảng thành phần / tài liệu nhà sản xuất; không tự khẳng định 'an toàn tuyệt đối'",
+        awareness_level: "solution_aware",
+        recommended_format: "So sánh cách cũ vs cách mới (không dàn dựng kết quả)",
+        hooks: [
+          {
+            variation: "A",
+            platform: "tiktok",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Mẹ đọc nhãn thành phần dưới ánh đèn",
+            on_screen_text: "Đọc kỹ trước khi bôi cho con",
+            why_it_stops_scroll: "Chạm nỗi lo hoá chất của tệp tự nhiên",
+          },
+          {
+            variation: "B",
+            platform: "meta",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Danh sách thành phần cuộn trên màn hình",
+            on_screen_text: "Bám lời thoại",
+            why_it_stops_scroll: "Placeholder — cần trau",
+          },
+          {
+            variation: "C",
+            platform: "both",
+            spoken_hook: "Cần viết cụ thể hơn",
+            visual_first_frame: "Đặt sản phẩm cạnh tuýp gel quen thuộc",
+            on_screen_text: "Bám lời thoại",
+            why_it_stops_scroll: "Placeholder — cần trau",
+          },
+        ],
+      },
     ],
     validation: {
       trend_status: "surging",

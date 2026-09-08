@@ -185,18 +185,37 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
 
             <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-3 space-y-1.5">
               <h4 className="font-semibold text-zinc-900 text-xs">
-                Creative Angles
+                Góc bán (lý do mua)
               </h4>
-              <ul className="space-y-1.5">
-                {product.angles.map((angle, i) => (
-                  <li
-                    key={i}
-                    className="p-1.5 rounded bg-white border border-zinc-200 text-[11px] text-zinc-700 shadow-2xs"
-                  >
-                    {angle}
-                  </li>
-                ))}
-              </ul>
+              {product.marketing_angles && product.marketing_angles.length > 0 ? (
+                <ul className="space-y-1.5">
+                  {product.marketing_angles.map((a) => (
+                    <li
+                      key={a.id}
+                      className="p-2 rounded bg-white border border-zinc-200 text-[11px] shadow-2xs space-y-0.5"
+                    >
+                      <div className="font-semibold text-zinc-900">{a.name}</div>
+                      <div className="text-zinc-600">
+                        Tệp: {a.sub_audience}
+                      </div>
+                      <div className="text-zinc-500">
+                        Cảm xúc: {a.core_emotion} · {a.hooks.length} hook
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <ul className="space-y-1.5">
+                  {product.angles.map((angle, i) => (
+                    <li
+                      key={i}
+                      className="p-1.5 rounded bg-white border border-zinc-200 text-[11px] text-zinc-700 shadow-2xs"
+                    >
+                      {angle}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         </div>
