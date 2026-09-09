@@ -132,6 +132,11 @@ export interface AngleHook {
   visual_first_frame: string; // what fills frame 1 (the pattern interrupt)
   on_screen_text: string;
   why_it_stops_scroll: string;
+  // English render-ready prompts (authored with the creative, fed straight to image/video models)
+  image_prompt?: string;
+  video_prompt?: string;
+  generated_image_url?: string;
+  generated_video_url?: string;
 }
 
 /**
@@ -157,6 +162,8 @@ export interface UGCScriptScene {
   visual: string; // shot direction, phone-shot / unpolished feel
   spoken: string; // creator voiceover, conversational
   on_screen_text: string;
+  video_prompt?: string; // English render-ready prompt for this scene
+  generated_video_url?: string;
 }
 
 export interface UGCScript {
@@ -182,6 +189,8 @@ export interface StaticAdConcept {
   concept: string; // the visual idea
   headline: string;
   primary_text: string; // Meta primary text
+  image_prompt?: string; // English render-ready prompt
+  generated_image_url?: string;
 }
 
 export interface CreativeTestPlan {
@@ -418,20 +427,20 @@ const SEED_PRODUCTS: Product[] = [
       "Mất ngủ 2h sáng",
       "Không chạm tay vào miệng con",
       "Không muốn dùng gel gây tê hoá chất",
-      "Bác sĩ nhi POV",
     ],
     marketing_angles: [
       {
         id: 1,
         name: "Mất ngủ 2h sáng",
-        sub_audience: "Bố mẹ con 4-12 tháng, bị đánh thức nhiều đêm liên tiếp, kiệt sức",
-        core_emotion: "Tuyệt vọng, kiệt sức, thấy có lỗi vì cáu với con",
+        sub_audience:
+          "Bố mẹ con 4-12 tháng, bị đánh thức 3-4 lần mỗi đêm nhiều tuần liền, kiệt sức",
+        core_emotion: "Tuyệt vọng, kiệt sức, thấy có lỗi vì mất kiên nhẫn với con",
         belief_to_shift: "Con mọc răng thì cả nhà phải chịu mất ngủ, rồi cũng qua",
-        promise: "Một cách dỗ con nhanh hơn để cả nhà ngủ tiếp",
+        promise: "Một cách dỗ con lúc nửa đêm nhẹ nhàng hơn để cả nhà ngủ tiếp",
         proof_needed:
-          "Quay cảnh dùng thật lúc tối; không hứa số phút cụ thể hay 'ngủ ngay'",
+          "Quay cảnh dùng thật lúc tối theo hướng dẫn; KHÔNG hứa 'ngủ ngay', không nói số phút cụ thể",
         awareness_level: "problem_aware",
-        recommended_format: "UGC talking-head mẹ quay trong phòng bé + b-roll",
+        recommended_format: "UGC talking-head mẹ quay trong phòng bé lúc tối + b-roll",
         source_evidence:
           "Review 1-3 sao đối thủ: 'thức dậy 3-4 lần mỗi đêm', 'cả nhà kiệt sức'",
         hooks: [
@@ -439,101 +448,172 @@ const SEED_PRODUCTS: Product[] = [
             variation: "A",
             platform: "tiktok",
             spoken_hook:
-              "Cần viết cụ thể: mô tả đúng khoảnh khắc 2h sáng con thức giấc cào má",
-            visual_first_frame: "Đồng hồ 2:14, mẹ bế con trong phòng tối",
-            on_screen_text: "POV: đêm thứ 5 liên tiếp",
-            why_it_stops_scroll: "Bố mẹ mất ngủ nhận ra chính mình ngay giây đầu",
+              "Đêm qua con mình lại thức lúc 2 giờ sáng — và đây là thứ duy nhất mình kịp làm mà không phải bật đèn.",
+            visual_first_frame:
+              "Phòng tối, đồng hồ 2:14, mẹ bơ phờ ngồi bên nôi, tay cầm chai lăn nhỏ.",
+            on_screen_text: "2:14 sáng · đêm thứ 5 liên tiếp",
+            why_it_stops_scroll:
+              "Đồng cảm tức thì: bố mẹ mất ngủ thấy đúng hoàn cảnh của mình trong 2 giây đầu.",
+            image_prompt:
+              "Editorial lifestyle advertising photograph, a tired mother in her early 30s sitting calmly beside a crib in a dimly lit nursery late at night, warm bedside lamp glow, she is holding a small 10ml rollerball bottle and looking at it thoughtfully, cozy neutral-toned nursery, the product is the hero and softly lit, mood is quiet and reassuring, 50mm lens, shallow depth of field, warm premium colour grade, generous negative space top-right for a headline, photorealistic, 8k, no text, no logos. No crying child, no clinical setting.",
+            video_prompt:
+              "Vertical 9:16 UGC ad opening, ~3 seconds. A tired but calm mother in her early 30s speaks softly straight to camera in a dim cozy nursery lit by a warm bedside lamp, then glances down and gently picks up a small rollerball bottle from the nightstand. Slow subtle push-in on the bottle on the last beat. Handheld phone feel, natural low light, lifelike micro-expressions, 4k 30fps, no baked-in captions. Warm, quiet, product-forward. No crying baby, no clinical imagery.",
           },
           {
             variation: "B",
             platform: "meta",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Cận mặt bé nhăn nhó cắn tay",
-            on_screen_text: "Bám lời thoại",
-            why_it_stops_scroll: "Placeholder — cần trau",
+            spoken_hook:
+              "Vợ mình không ngủ trọn một giấc suốt gần 2 tuần con mọc răng. Mình lặng lẽ đặt mua cái này.",
+            visual_first_frame:
+              "Ông bố quay selfie trong bếp lúc rạng sáng, sau lưng là bình sữa và khăn sữa.",
+            on_screen_text: "Góc nhìn của một ông chồng",
+            why_it_stops_scroll:
+              "POV người bạn đời hiếm gặp trong ngách này — lạ tai nên người xem dừng lại.",
+            image_prompt:
+              "Editorial lifestyle advertising photograph, a caring father in his 30s standing in a softly lit kitchen at early dawn, holding a small 10ml rollerball bottle and looking at it, blurred baby bottle and burp cloth on the counter behind him, calm warm morning light through the window, the product hero-lit and in sharp focus, reassuring understated mood, 50mm lens, shallow depth of field, warm premium colour grade, negative space for a headline, photorealistic, 8k, no text. No child in frame, no clinical setting.",
+            video_prompt:
+              "Vertical 9:16 UGC selfie video opening, ~3 seconds. A father in his 30s films himself talking to camera in a softly lit kitchen at dawn, tired but warm, then holds up a small rollerball bottle toward the lens. Handheld, natural morning light, authentic and unpolished, 4k 30fps, no captions baked in. Calm and sincere. No baby on screen, no medical imagery.",
           },
           {
             variation: "C",
             platform: "both",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Mẹ ngáp, quầng thâm mắt, pha sữa lúc rạng sáng",
-            on_screen_text: "Bám lời thoại",
-            why_it_stops_scroll: "Placeholder — cần trau",
+            spoken_hook:
+              "3 đêm liền mình chỉ ngủ được 4 tiếng. Nếu bạn cũng đang đếm từng giờ, để mình cho bạn xem mình đổi cái gì.",
+            visual_first_frame:
+              "Cận mặt mẹ quầng thâm mắt nhìn thẳng camera, ánh sáng cửa sổ sớm mai.",
+            on_screen_text: "Đang đếm từng giờ ngủ?",
+            why_it_stops_scroll:
+              "Con số cụ thể ('4 tiếng', '3 đêm') + câu hỏi trực diện kéo đúng người đang trải qua.",
+            image_prompt:
+              "Editorial lifestyle advertising photograph, close-up portrait of a tired mother in her early 30s with visible under-eye shadows looking directly into the lens with a calm, honest expression, soft early-morning window light, neutral bedroom background gently blurred, she holds a small rollerball bottle near her chest, the product in sharp focus, intimate and sincere mood, 50mm lens, shallow depth of field, warm muted colour grade, photorealistic, 8k, no text. No child, no clinical setting.",
+            video_prompt:
+              "Vertical 9:16 UGC ad opening, ~3 seconds. Close, honest talking-head of a tired mother in her early 30s speaking directly to camera in soft morning window light, then she lifts a small rollerball bottle into frame. Handheld phone feel, natural light, real skin texture, 4k 30fps, no baked-in text. Sincere, calm, product-forward. No baby in distress, no medical setting.",
           },
         ],
       },
       {
         id: 2,
         name: "Không chạm tay vào miệng con",
-        sub_audience: "Bố mẹ kỹ tính về vệ sinh, ngại thọc ngón tay bôi gel",
-        core_emotion: "Ghê, lo vi khuẩn",
-        belief_to_shift: "Bôi gel bằng ngón tay là bình thường",
-        promise: "Dùng bên ngoài viền hàm, không đưa gì vào miệng con",
-        proof_needed: "Demo thao tác lăn ngoài hàm; không khẳng định 'diệt khuẩn'",
+        sub_audience:
+          "Bố mẹ kỹ tính về vệ sinh, thấy gợn khi phải thọc ngón tay bôi gel vào nướu con",
+        core_emotion: "Gợn, lo vi khuẩn từ tay người lớn",
+        belief_to_shift: "Bôi gel bằng ngón tay vào nướu con là chuyện bình thường",
+        promise:
+          "Dùng bên ngoài viền hàm — không đưa ngón tay hay sản phẩm vào miệng con",
+        proof_needed:
+          "Demo thao tác lăn ngoài viền hàm; KHÔNG dùng từ 'diệt khuẩn' / 'kháng khuẩn'",
         awareness_level: "solution_aware",
-        recommended_format: "Demo cận cảnh + voiceover ngắn",
+        recommended_format: "Demo cận cảnh thao tác + voiceover ngắn",
+        source_evidence:
+          "Comment TikTok đối thủ: 'mỗi lần bôi lại phải rửa tay', 'bé cắn ngón tay'",
         hooks: [
           {
             variation: "A",
             platform: "tiktok",
-            spoken_hook: "Cần viết cụ thể hơn về thói quen thọc tay bôi gel",
-            visual_first_frame: "Tay đang vặn nắp tuýp gel rồi khựng lại",
-            on_screen_text: "Trước khi bôi gì vào miệng con...",
-            why_it_stops_scroll: "Chạm nỗi lo vệ sinh của bố mẹ kỹ tính",
+            spoken_hook:
+              "Mỗi tối mình rửa tay 5 lần chỉ để bôi gel cho con — tới khi mình nhận ra không nhất thiết phải cho ngón tay vào miệng bé.",
+            visual_first_frame:
+              "Cận tay mẹ vừa vặn nắp một tuýp gel thì khựng lại, đặt xuống, cầm chai lăn lên.",
+            on_screen_text: "Khoan đã — có cách khác không?",
+            why_it_stops_scroll:
+              "Chi tiết cụ thể ('rửa tay 5 lần') làm người có cùng thói quen thấy 'đúng mình'.",
+            image_prompt:
+              "Editorial product photograph, adult hands over a clean bright bathroom counter, one hand setting down a generic ointment tube and the other picking up a small stainless-steel rollerball bottle, crisp daylight, water droplets on the counter, the rollerball bottle in sharp hero focus, minimal calm composition, 50mm macro, shallow depth of field, cool-neutral premium colour grade, photorealistic, 8k, no text, no logos, no faces, no mouths.",
+            video_prompt:
+              "Vertical 9:16 close-up UGC video, ~3 seconds. Adult hands at a bright bathroom counter start to open a generic gel tube, pause, set it down, and pick up a small stainless-steel rollerball bottle instead. Natural daylight, handheld phone feel, macro detail on the hands and product, 4k 30fps, no captions. Calm and matter-of-fact. No mouth, no child, no clinical setting.",
           },
           {
             variation: "B",
             platform: "meta",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Hai cách đặt cạnh nhau",
-            on_screen_text: "Bám lời thoại",
-            why_it_stops_scroll: "Placeholder — cần trau",
+            spoken_hook:
+              "Ngón tay người lớn không sạch như mình tưởng, nhất là khi chạm vào nướu đang nứt của con. Đây là cách mình làm khác đi.",
+            visual_first_frame:
+              "Split đơn giản: bên trái tuýp gel + khăn giấy, bên phải chai lăn thép trên viền hàm (mô hình, không phải bé thật).",
+            on_screen_text: "Cách cũ vs cách mình đang dùng",
+            why_it_stops_scroll:
+              "Đặt vấn đề vệ sinh thẳng thắn + hình so sánh rõ khiến người lo vệ sinh dừng lại.",
+            image_prompt:
+              "Editorial split-composition product photograph on a clean neutral surface: left side a generic ointment tube with a crumpled tissue, right side a sleek stainless-steel rollerball bottle standing upright and hero-lit; soft studio light, crisp focus, minimal premium styling, clear visual contrast between messy-left and clean-right, 50mm, shallow depth of field, neutral colour grade, photorealistic, 8k, no text, no people.",
+            video_prompt:
+              "Vertical 9:16 product video, ~3 seconds. Camera pushes slowly across a clean neutral surface from a generic gel tube with a tissue on the left to a sleek stainless-steel rollerball bottle standing upright on the right, which is hero-lit. Soft studio light, smooth slider move, 4k 30fps, no captions. Minimal, premium, calm. No people, no mouths, no clinical setting.",
           },
           {
             variation: "C",
             platform: "both",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Cận tay rửa xà phòng nhiều lần trong ngày",
-            on_screen_text: "Bám lời thoại",
-            why_it_stops_scroll: "Placeholder — cần trau",
+            spoken_hook:
+              "Nếu bạn cũng thấy gợn mỗi lần phải thọc tay vào miệng con để bôi gel, video này dành cho bạn.",
+            visual_first_frame:
+              "Mẹ nhìn tuýp gel trên tay với vẻ ngần ngừ, rồi đặt xuống bàn.",
+            on_screen_text: "Thấy gợn mỗi lần bôi gel?",
+            why_it_stops_scroll:
+              "Gọi tên đúng cảm giác 'gợn' mà tệp này chưa ai nói ra giúp họ.",
+            image_prompt:
+              "Editorial lifestyle photograph, a mother in her early 30s at a tidy kitchen table looking with mild hesitation at a generic gel tube in her hand, a small rollerball bottle also on the table, soft daylight, calm neutral tones, product in sharp focus, thoughtful understated mood, 50mm, shallow depth of field, warm-neutral colour grade, photorealistic, 8k, no text. No child, no mouth, no clinical setting.",
+            video_prompt:
+              "Vertical 9:16 UGC video, ~3 seconds. A mother in her early 30s sits at a tidy kitchen table, looks at a generic gel tube in her hand with slight hesitation, then sets it down and picks up a small rollerball bottle. Natural daylight, handheld feel, 4k 30fps, no captions. Thoughtful, calm. No child, no mouth, no clinical setting.",
           },
         ],
       },
       {
         id: 3,
         name: "Không muốn dùng gel gây tê hoá chất",
-        sub_audience: "Bố mẹ ưu tiên tự nhiên, dè chừng hoạt chất bôi cho trẻ",
-        core_emotion: "Lo lắng, muốn kiểm soát cái gì chạm vào con",
-        belief_to_shift: "Gel bôi nướu là lựa chọn mặc định và an toàn",
+        sub_audience:
+          "Bố mẹ ưu tiên tự nhiên, đọc kỹ thành phần, dè chừng hoạt chất gây tê bôi cho trẻ",
+        core_emotion: "Lo lắng, muốn kiểm soát chính xác cái gì chạm vào con",
+        belief_to_shift: "Gel gây tê là lựa chọn mặc định và đủ an toàn cho bé",
         promise: "Một lựa chọn không bôi hoạt chất gây tê vào miệng con",
         proof_needed:
-          "Đối chiếu bảng thành phần / tài liệu nhà sản xuất; không tự khẳng định 'an toàn tuyệt đối'",
+          "Đọc thành phần trên nhãn thật; dẫn khuyến cáo của cơ quan y tế về gel gây tê cho trẻ; KHÔNG tự khẳng định 'an toàn tuyệt đối'",
         awareness_level: "solution_aware",
-        recommended_format: "So sánh cách cũ vs cách mới (không dàn dựng kết quả)",
+        recommended_format:
+          "So sánh nhãn thành phần cách cũ vs cách mới (không dàn dựng kết quả)",
+        source_evidence:
+          "FDA từng cảnh báo về benzocaine cho trẻ dưới 2 tuổi — dùng làm bối cảnh, dẫn nguồn rõ",
         hooks: [
           {
             variation: "A",
             platform: "tiktok",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Mẹ đọc nhãn thành phần dưới ánh đèn",
-            on_screen_text: "Đọc kỹ trước khi bôi cho con",
-            why_it_stops_scroll: "Chạm nỗi lo hoá chất của tệp tự nhiên",
+            spoken_hook:
+              "Trước khi bôi bất kỳ gel mọc răng nào cho con, lật mặt sau tuýp và đọc dòng hoạt chất đầu tiên đã.",
+            visual_first_frame:
+              "Cận cảnh ngón tay lật một tuýp gel, camera lia vào dòng 'Active ingredient'.",
+            on_screen_text: "Đọc dòng này trước đã",
+            why_it_stops_scroll:
+              "Ra lệnh hành động cụ thể ('lật mặt sau, đọc dòng đầu') tạo tò mò muốn xem có gì.",
+            image_prompt:
+              "Editorial macro photograph, a hand turning over a generic teething gel tube to reveal the ingredients panel on the back, crisp daylight, extreme detail on the label text area (kept illegible/blurred), a small rollerball bottle resting nearby in soft focus, clean neutral surface, investigative calm mood, 100mm macro lens, shallow depth of field, neutral colour grade, photorealistic, 8k, no readable text, no logos, no faces.",
+            video_prompt:
+              "Vertical 9:16 macro UGC video, ~3 seconds. A hand picks up a generic teething gel tube and slowly turns it over to show the back ingredients panel, then a small rollerball bottle slides into frame beside it. Crisp daylight, handheld macro, slow deliberate motion, 4k 30fps, no captions. Investigative, calm. No faces, no mouths, no clinical setting.",
           },
           {
             variation: "B",
             platform: "meta",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Danh sách thành phần cuộn trên màn hình",
-            on_screen_text: "Bám lời thoại",
-            why_it_stops_scroll: "Placeholder — cần trau",
+            spoken_hook:
+              "Mình đọc thành phần tuýp gel quen thuộc, tra tên hoạt chất đó — rồi quyết định tìm lựa chọn khác cho con.",
+            visual_first_frame:
+              "Màn hình điện thoại đang tra một tên hoạt chất, tuýp gel để bên cạnh.",
+            on_screen_text: "Mình đã tra thử tên này",
+            why_it_stops_scroll:
+              "Câu chuyện 'tự đi tìm hiểu rồi đổi ý' đáng tin hơn quảng cáo trực tiếp.",
+            image_prompt:
+              "Editorial lifestyle photograph, a phone lying on a wooden table showing a search results page (screen content kept blurred), a generic gel tube beside it and a small rollerball bottle in sharp focus, warm indoor light, calm considered mood, 50mm, shallow depth of field, warm-neutral colour grade, photorealistic, 8k, no readable text, no logos, no faces.",
+            video_prompt:
+              "Vertical 9:16 UGC video, ~3 seconds. Overhead shot of a hand typing a search on a phone resting on a wooden table (screen blurred), then the hand puts the phone down and picks up a small rollerball bottle sitting next to a generic gel tube. Warm indoor light, handheld feel, 4k 30fps, no captions. Considered, calm. No faces in close-up, no mouths, no clinical setting.",
           },
           {
             variation: "C",
             platform: "both",
-            spoken_hook: "Cần viết cụ thể hơn",
-            visual_first_frame: "Đặt sản phẩm cạnh tuýp gel quen thuộc",
-            on_screen_text: "Bám lời thoại",
-            why_it_stops_scroll: "Placeholder — cần trau",
+            spoken_hook:
+              "Thành phần chỉ có dầu hoa trà, cúc La Mã và Vitamin E. Không cồn, không chất gây tê. Đây là lý do mình chọn nó.",
+            visual_first_frame:
+              "Nhỏ một giọt dầu trong vắt lên đầu ngón tay dưới ánh sáng tự nhiên.",
+            on_screen_text: "Đọc được hết thành phần trên nhãn",
+            why_it_stops_scroll:
+              "Liệt kê thành phần ngắn gọn, dễ đọc — tệp 'đọc nhãn' thấy nhẹ nhõm.",
+            image_prompt:
+              "Editorial macro photograph, a single clear drop of botanical oil on a fingertip catching soft natural window light, a small amber-and-steel rollerball bottle in sharp focus just behind, a few dried chamomile flowers and camellia leaves styled minimally on a pale stone surface, clean natural mood, 100mm macro, shallow depth of field, warm natural colour grade, photorealistic, 8k, no text, no logos.",
+            video_prompt:
+              "Vertical 9:16 macro UGC video, ~3 seconds. A single clear drop of botanical oil forms on a fingertip in soft window light, then the hand tilts toward a small rollerball bottle in focus behind it, with dried chamomile flowers styled on a pale stone surface. Natural light, slow macro motion, 4k 30fps, no captions. Clean, calm, natural. No mouths, no children, no clinical setting.",
           },
         ],
       },
@@ -1116,6 +1196,115 @@ const SEED_PRODUCTS: Product[] = [
     updated_at: new Date().toISOString(),
   },
 ];
+
+// Flagship demo (Snuglet Roller): derive the angle-driven creative system from its structured
+// angles + offer so Stage 06 shows Marketing Angles / UGC Scripts / Static Creatives / Test Plan
+// (with English render prompts) immediately, without a re-run.
+(() => {
+  const p = SEED_PRODUCTS.find((x) => x.id === "prod_snuglet_roller");
+  if (!p || !p.creative_pack || !p.marketing_angles || !p.offer_package) return;
+  const offer = p.offer_package;
+  const imgBase = `Editorial lifestyle advertising photograph for "${p.name}". A relatable adult using the small rollerball bottle calmly in a bright tidy home; the product is the hero and softly lit. Reassuring understated mood. Soft window light, 50mm lens, shallow depth of field, warm premium colour grade, generous negative space for a headline. Photorealistic, 8k, no text, no logos. No children in distress, no clinical setting, nothing entering a mouth.`;
+  const vidBase = `Vertical 9:16 UGC ad opening for "${p.name}". A relatable person speaks straight to camera in a real home for ~2s, then calmly picks up and shows the small rollerball bottle with a slow push-in on the last beat. Handheld phone feel, natural indoor light, lifelike expressions, 4k 30fps, no baked-in captions. Warm, calm, product-forward. No baby in distress, no clinical imagery.`;
+  p.creative_pack.angle_briefs = p.marketing_angles;
+  p.creative_pack.ugc_scripts = p.marketing_angles.map((a) => ({
+    angle_id: a.id,
+    angle_name: a.name,
+    creator_persona: `Người thuộc tệp "${a.sub_audience}" tự quay bằng điện thoại, không dàn dựng studio.`,
+    framework: a.recommended_format,
+    target_length: "25-40 giây",
+    hook_line: a.hooks[0].spoken_hook,
+    scenes: [
+      {
+        time: "0-3s",
+        visual: a.hooks[0].visual_first_frame,
+        spoken: a.hooks[0].spoken_hook,
+        on_screen_text: a.hooks[0].on_screen_text,
+        video_prompt: a.hooks[0].video_prompt || vidBase,
+      },
+      {
+        time: "3-15s",
+        visual: "Kể hoàn cảnh thật của mình, quay cận, ánh sáng tự nhiên.",
+        spoken: `Nói về: ${a.belief_to_shift} → vì sao mình đi tìm cách khác.`,
+        on_screen_text: "Bám sát lời thoại",
+        video_prompt: vidBase,
+      },
+      {
+        time: "15-30s",
+        visual: "Quay cảnh dùng thật theo hướng dẫn; KHÔNG dàn dựng kết quả.",
+        spoken: `${a.promise}. ${a.proof_needed}`,
+        on_screen_text: "Cách mình đang dùng",
+        video_prompt: vidBase,
+      },
+      {
+        time: "30-38s",
+        visual: "Chỉ tay xuống link, hiện các gói đúng offer.",
+        spoken: offer.risk_reversal_guarantee,
+        on_screen_text: offer.urgency_hook,
+        video_prompt: vidBase,
+      },
+    ],
+    cta_line: `Xem các gói và chính sách đổi trả ở link. ${offer.risk_reversal_guarantee}`,
+    b_roll_shot_list: [
+      "Cảnh sinh hoạt của tệp khách (không dàn dựng kết quả)",
+      "Cận tay cầm và dùng chai lăn",
+      "Chai lăn đặt cạnh túi bỉm sữa / đầu giường",
+      "Màn hình điện thoại mở trang sản phẩm",
+    ],
+    compliance_flags: [
+      {
+        claim: "Bất kỳ câu nào hứa 'ngủ ngay', giảm đau, an toàn tuyệt đối hoặc số phút cụ thể",
+        risk: "Meta/TikTok duyệt gắt ngành trẻ em/sức khoẻ — dễ bị từ chối hoặc khoá tài khoản.",
+        compliant_rewrite:
+          "Chỉ mô tả cách dùng và trải nghiệm cá nhân; dẫn nguồn nhà sản xuất cho mọi tuyên bố công dụng.",
+      },
+    ],
+  }));
+  p.creative_pack.static_concepts = p.marketing_angles.map((a) => ({
+    angle_id: a.id,
+    format: "single_image" as const,
+    concept: `Ảnh lifestyle theo góc "${a.name}": người thuộc tệp "${a.sub_audience}" dùng chai lăn bình thường trong bối cảnh nhà cửa, sản phẩm là hero. Không dàn dựng kết quả.`,
+    headline: a.name,
+    primary_text: `${a.promise} — ${a.proof_needed}`,
+    image_prompt: a.hooks[0].image_prompt || imgBase,
+  }));
+  p.creative_pack.test_plan = {
+    first_angle_id: 1,
+    first_angle_rationale:
+      "Test góc 'Mất ngủ 2h sáng' trước: cảm xúc lõi mạnh nhất, tệp khách rõ nhất, và trùng với tín hiệu review đối thủ. Cần xác nhận lại bằng ad longevity trên Meta Ad Library.",
+    daily_budget_per_ad_set: 20,
+    ad_set_count: 3,
+    test_window_days: 3,
+    kill_rules: [
+      {
+        metric: "Hook rate (xem 3s / hiển thị)",
+        threshold: "< 25% sau ~1.000 hiển thị",
+        action: "Đổi hook, giữ nguyên phần còn lại của creative",
+      },
+      {
+        metric: "CTR outbound",
+        threshold: "< 1%",
+        action: "Đổi angle hoặc creative",
+      },
+      {
+        metric: "CPA",
+        threshold: `> Break-even ROAS (${p.supplier_economics?.break_even_roas ?? "xem Stage 04"}x) sau khi tiêu ~2x AOV`,
+        action: "Tắt ad set",
+      },
+    ],
+    scale_rule:
+      "Angle nào đạt CPA dưới target 2-3 ngày liên tục → tăng 20-30% ngân sách/ngày hoặc nhân bản sang ad set mới.",
+    iteration_note:
+      "Winner → làm 3-5 biến thể CÙNG góc (đổi hook, đổi creator, đổi b-roll), không nhảy sang góc khác vội.",
+  };
+  p.creative_pack.compliance_summary = [
+    "Ngành trẻ em / sức khoẻ bị Meta & TikTok duyệt gắt: KHÔNG hứa chữa/giảm đau, 'an toàn tuyệt đối', '#1', số phút cụ thể.",
+    "Mọi tuyên bố thành phần/công dụng phải dẫn nguồn nhà sản xuất — không suy ra từ tên sản phẩm.",
+    "KHÔNG ảnh/video trẻ em khóc hoặc cảnh đưa tay/sản phẩm vào miệng bé; không before/after ngụ ý kết quả đảm bảo.",
+    "KHÔNG countdown/tồn kho giả trên landing (giảm lòng tin + rủi ro chính sách).",
+    "Landing hiện tại có các câu cần sửa trước khi chạy: 'Dứt Cơn Quấy Khóc... Trong 30 Giây', 'Hoàn toàn an toàn cho trẻ từ 3 tháng', 'hiệu quả gấp 3 lần', 'chặn xung truyền tín hiệu đau lên não'.",
+  ];
+})();
 
 class EcomStore {
   private data: EcomStoreData;

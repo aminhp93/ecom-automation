@@ -27,37 +27,88 @@ export interface CreativeWorkflowOptions {
   onEvent?: EventCallback;
 }
 
+// ---------------------------------------------------------------------------
+// English render-prompt helpers. Image/video models are English-trained, so the
+// prompt fed to Imagen / Flux / Kling / Runway is ALWAYS English + detailed +
+// brand-safe (no children in distress, no clinical imagery, no implied results).
+// ---------------------------------------------------------------------------
+
+const IMG_QUALITY =
+  "Premium DTC e-commerce advertising photography. Soft directional window light, 50mm lens, shallow depth of field, crisp focus on the product, calm minimal composition with generous negative space for a headline, warm neutral premium colour grade, subtle film grain, photorealistic, 8k. No text, no logos, no watermark.";
+const VID_QUALITY =
+  "Authentic handheld UGC filmed on a modern phone, natural indoor light, documentary feel, lifelike skin texture and micro-expressions, gentle organic camera movement, 4k 30fps, no baked-in captions, no CGI sheen.";
+const SAFE =
+  "Brand-safe: no children in distress, no crying, no clinical or medical setting, nothing entering anyone's mouth, no before/after implying a guaranteed result. Keep it warm, calm, lifestyle-led and product-forward.";
+
+function englishImagePrompt(product: Product): string {
+  return `Editorial lifestyle advertising photograph for "${product.name}"${
+    product.category ? ` (${product.category})` : ""
+  }. A relatable adult using the product calmly and naturally in a bright, tidy home; the product is clearly in frame and hero-lit. Reassuring, understated mood. ${IMG_QUALITY} ${SAFE}`;
+}
+
+function englishVideoPrompt(product: Product): string {
+  return `Vertical 9:16 UGC ad opening for "${product.name}"${
+    product.category ? ` (${product.category})` : ""
+  }. A relatable person speaks straight to camera in a real home for ~2 seconds, then calmly picks up and shows the product with a slow push-in on the last beat. ${VID_QUALITY} ${SAFE}`;
+}
+
+/** Fill any missing English `image_prompt` / `video_prompt` so the gen buttons always have a usable prompt. */
+function ensureRenderPrompts(pack: CreativePack, product: Product): void {
+  const img = englishImagePrompt(product);
+  const vid = englishVideoPrompt(product);
+  for (const a of pack.angle_briefs ?? []) {
+    for (const h of a.hooks) {
+      if (!h.image_prompt?.trim()) h.image_prompt = img;
+      if (!h.video_prompt?.trim()) h.video_prompt = vid;
+    }
+  }
+  for (const s of pack.ugc_scripts ?? []) {
+    for (const sc of s.scenes) {
+      if (!sc.video_prompt?.trim()) sc.video_prompt = vid;
+    }
+  }
+  for (const c of pack.static_concepts ?? []) {
+    if (!c.image_prompt?.trim()) c.image_prompt = img;
+  }
+}
+
 /** Products discovered before the angle rework only have flat `angles`; rebuild minimal structs. */
 function deriveAnglesFromFlat(product: Product): MarketingAngle[] {
   const names = (product.angles ?? []).filter(Boolean).slice(0, 4);
   const pains = product.pain_points ?? [];
   const source = names.length ? names : pains.slice(0, 3);
+  const img = englishImagePrompt(product);
+  const vid = englishVideoPrompt(product);
   return source.map((name, i) => ({
     id: i + 1,
     name: name.slice(0, 60),
     sub_audience:
       product.target_audience ||
-      "Cần xác định tệp khách cụ thể trước khi chạy.",
-    core_emotion: ["Bực bội / mệt mỏi", "Lo lắng / mất niềm tin", "Tò mò"][
-      i % 3
-    ],
-    belief_to_shift: "Phải chấp nhận sống chung với vấn đề này.",
-    promise: "Xử lý vấn đề nhanh hơn — cần kiểm chứng bằng demo thật.",
+      "Cần xác định tệp khách cụ thể (tuổi, hoàn cảnh, mức độ nhận thức) trước khi chạy.",
+    core_emotion: ["Bực bội / mệt mỏi", "Lo lắng / mất niềm tin", "Tò mò"][i % 3],
+    belief_to_shift: `Phải chấp nhận sống chung với: ${pains[i] || name}.`,
+    promise: "Xử lý vấn đề gọn hơn — cần kiểm chứng bằng demo dùng thật.",
     proof_needed:
-      "Quay cảnh dùng thật theo hướng dẫn nhà sản xuất; không hứa kết quả/định lượng chưa có bằng chứng.",
+      "Quay cảnh dùng thật theo hướng dẫn nhà sản xuất; không hứa kết quả / định lượng / an toàn chưa có bằng chứng.",
     awareness_level: "problem_aware" as const,
     recommended_format: [
-      "UGC talking-head + b-roll",
-      "So sánh cách cũ vs cách mới",
-      "Founder / người dùng kể lại",
+      "UGC talking-head + b-roll thao tác thật",
+      "So sánh cách cũ vs cách mới (không dàn dựng kết quả)",
+      "Founder / người dùng kể lại trải nghiệm",
     ][i % 3],
     hooks: (["A", "B", "C"] as const).map((v, h) => ({
       variation: v,
       platform: (["tiktok", "meta", "both"] as const)[h],
-      spoken_hook: `(${v}) Cần viết cụ thể hơn cho: "${(pains[i] || name).slice(0, 40)}"`,
-      visual_first_frame: "Cận cảnh khoảnh khắc vấn đề xảy ra (chưa dàn dựng).",
-      on_screen_text: "Chèn chữ bám lời thoại",
-      why_it_stops_scroll: "Placeholder — hook cần người viết trau lại.",
+      spoken_hook: `(${v}) Viết lại cho cụ thể: thêm con số / mốc thời gian / tình huống chính xác về "${(
+        pains[i] || name
+      ).slice(0, 44)}".`,
+      visual_first_frame:
+        "Người thuộc tệp khách, trong bối cảnh sinh hoạt thật, cầm/dùng sản phẩm một cách bình thường (không dàn dựng kết quả).",
+      on_screen_text: "Chèn chữ bám sát lời thoại",
+      why_it_stops_scroll:
+        "Placeholder — hook fallback là khung, cần người viết trau cho sắc.",
+      image_prompt: img,
+      video_prompt: vid,
     })),
   }));
 }
@@ -195,10 +246,11 @@ function buildFallbackCreative(
     })),
     static_concepts: angles.map((a) => ({
       angle_id: a.id,
-      format: "before_after" as const,
-      concept: `Ảnh chia đôi: bối cảnh của "${a.sub_audience}" trước / sau — không dàn dựng kết quả, chỉ minh hoạ tình huống.`,
+      format: "single_image" as const,
+      concept: `Ảnh sản phẩm lifestyle theo góc "${a.name}": người thuộc tệp "${a.sub_audience}" dùng sản phẩm bình thường trong bối cảnh nhà cửa, sản phẩm là hero. Không dàn dựng kết quả.`,
       headline: a.name,
       primary_text: `${a.promise} — ${a.proof_needed}`,
+      image_prompt: englishImagePrompt(product),
     })),
     test_plan: {
       first_angle_id: first.id,
@@ -317,11 +369,17 @@ Quy tắc:
 - KHÔNG hứa kết quả, thời gian, công dụng y tế, độ an toàn, "#1", số liệu khách hàng nếu chưa có bằng chứng. Ghi các câu rủi ro vào "compliance_flags" kèm bản viết lại an toàn.
 - Đây là BẢN NHÁP cần người duyệt. Chỉ mô tả cách dùng + trải nghiệm cá nhân.
 
+RENDER PROMPTS (image_prompt / video_prompt) — BẮT BUỘC:
+- Viết HOÀN TOÀN BẰNG TIẾNG ANH (model tạo ảnh/video train tiếng Anh; prompt tiếng Việt ra chất lượng rất xấu).
+- Chi tiết & có cấu trúc: subject, wardrobe, setting/props, lighting, camera & lens, motion (với video), style, mood, composition, colour grade. Thêm "photorealistic, 8k, no text" cho ảnh; "handheld UGC, 4k 30fps, natural light" cho video.
+- BRAND-SAFE tuyệt đối: KHÔNG trẻ em khóc/quấy/đau, KHÔNG bối cảnh y tế/lâm sàng, KHÔNG cảnh đưa gì vào miệng ai, KHÔNG before/after ngụ ý kết quả đảm bảo. Chỉ cảnh lifestyle ấm áp, bình thường, tôn sản phẩm.
+- image_prompt cho MỖI hook (dựng hình frame 1) và MỖI static_concept. video_prompt cho MỖI hook (3 giây đầu) và MỖI ugc scene.
+
 Trả về JSON:
 {
-  "angle_briefs": [ { "id": 1, "name": "...", "sub_audience": "...", "core_emotion": "...", "belief_to_shift": "...", "promise": "...", "proof_needed": "...", "awareness_level": "problem_aware", "recommended_format": "...", "hooks": [ { "variation": "A", "platform": "tiktok", "spoken_hook": "...", "visual_first_frame": "...", "on_screen_text": "...", "why_it_stops_scroll": "..." } ] } ],
-  "ugc_scripts": [ { "angle_id": 1, "angle_name": "...", "creator_persona": "ai quay, quay ở đâu, phong cách", "framework": "PAS | Before-After | Founder story | 3 reasons", "target_length": "30-40s", "hook_line": "câu mở đầu = 1 hook của góc", "scenes": [ { "time": "0-3s", "visual": "chỉ đạo quay, cảm giác quay bằng điện thoại", "spoken": "lời thoại khẩu ngữ", "on_screen_text": "..." } ], "cta_line": "...", "b_roll_shot_list": ["clip 1", "clip 2"], "compliance_flags": [ { "claim": "câu rủi ro", "risk": "vì sao rủi ro", "compliant_rewrite": "bản an toàn" } ] } ],
-  "static_concepts": [ { "angle_id": 1, "format": "single_image | carousel | before_after | meme_ugc", "concept": "ý tưởng hình", "headline": "...", "primary_text": "..." } ],
+  "angle_briefs": [ { "id": 1, "name": "...", "sub_audience": "...", "core_emotion": "...", "belief_to_shift": "...", "promise": "...", "proof_needed": "...", "awareness_level": "problem_aware", "recommended_format": "...", "hooks": [ { "variation": "A", "platform": "tiktok", "spoken_hook": "...", "visual_first_frame": "...", "on_screen_text": "...", "why_it_stops_scroll": "...", "image_prompt": "ENGLISH detailed image prompt for frame 1", "video_prompt": "ENGLISH detailed 3s video prompt" } ] } ],
+  "ugc_scripts": [ { "angle_id": 1, "angle_name": "...", "creator_persona": "ai quay, quay ở đâu, phong cách", "framework": "PAS | Before-After | Founder story | 3 reasons", "target_length": "30-40s", "hook_line": "câu mở đầu = 1 hook của góc", "scenes": [ { "time": "0-3s", "visual": "chỉ đạo quay, cảm giác quay bằng điện thoại", "spoken": "lời thoại khẩu ngữ", "on_screen_text": "...", "video_prompt": "ENGLISH detailed video prompt for this scene" } ], "cta_line": "...", "b_roll_shot_list": ["clip 1", "clip 2"], "compliance_flags": [ { "claim": "câu rủi ro", "risk": "vì sao rủi ro", "compliant_rewrite": "bản an toàn" } ] } ],
+  "static_concepts": [ { "angle_id": 1, "format": "single_image | carousel | before_after | meme_ugc", "concept": "ý tưởng hình", "headline": "...", "primary_text": "...", "image_prompt": "ENGLISH detailed image prompt" } ],
   "test_plan": { "first_angle_id": 1, "first_angle_rationale": "vì sao test góc này trước", "daily_budget_per_ad_set": 20, "ad_set_count": 3, "test_window_days": 3, "kill_rules": [ { "metric": "Hook rate", "threshold": "< 25%", "action": "đổi hook" } ], "scale_rule": "...", "iteration_note": "winner → 3-5 biến thể cùng góc" },
   "compliance_summary": ["luật nền tảng ngành này cần tránh 1", "..."],
   "viral_hooks": [ { "id": 1, "angle": "tên góc", "hook_text": "hook", "category": "awareness level" } ],
@@ -425,6 +483,9 @@ Trả về JSON:
     complianceSummarySchema,
     "compliance_summary",
   );
+
+  // Guarantee every hook / scene / concept has a usable English render prompt.
+  ensureRenderPrompts(creativeData, product);
 
   creativeData.data_quality = dataQuality;
   creativeData.requires_review = true;

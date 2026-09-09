@@ -42,3 +42,6 @@ next-env.d.ts
 
 # local store data
 /.data/
+
+# AI-generated media assets
+/public/generated/

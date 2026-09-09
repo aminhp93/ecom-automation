@@ -119,6 +119,11 @@ export const angleHookSchema = z.object({
   visual_first_frame: text,
   on_screen_text: text,
   why_it_stops_scroll: text,
+  // English, render-ready prompts authored with the creative (feed straight to Imagen/Flux/Kling/Runway).
+  image_prompt: text.optional(),
+  video_prompt: text.optional(),
+  generated_image_url: text.optional(),
+  generated_video_url: text.optional(),
 });
 
 export const marketingAngleSchema = z.object({
@@ -149,6 +154,8 @@ export const ugcScriptSchema = z.object({
         visual: text,
         spoken: text,
         on_screen_text: text,
+        video_prompt: text.optional(),
+        generated_video_url: text.optional(),
       }),
     )
     .min(1),
@@ -165,6 +172,8 @@ export const staticConceptSchema = z.object({
   concept: text,
   headline: text,
   primary_text: text,
+  image_prompt: text.optional(),
+  generated_image_url: text.optional(),
 });
 
 export const testPlanSchema = z.object({
