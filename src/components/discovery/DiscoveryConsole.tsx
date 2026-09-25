@@ -11,14 +11,18 @@ interface DiscoveryConsoleProps {
 }
 
 const PRESET_NICHES = [
+  'Tất cả (All Niches)',
   'Baby Products',
   'Pet Care',
+  'Kitchen Gadgets',
+  'Beauty & Skincare',
+  'Fitness & Gym',
   'Car Accessories',
   'Smart Home',
-  'Kitchen Gadgets',
 ];
 
 const PLATFORMS = [
+  { id: 'kalodata', label: 'Kalodata' },
   { id: 'tiktok', label: 'TikTok' },
   { id: 'meta_ads', label: 'Meta Ads' },
   { id: 'amazon', label: 'Amazon' },
@@ -31,8 +35,9 @@ export const DiscoveryConsole: React.FC<DiscoveryConsoleProps> = ({
   onFilterChange,
   onOpenAddCustom,
 }) => {
-  const [niche, setNiche] = useState('Baby Products');
+  const [niche, setNiche] = useState('Tất cả (All Niches)');
   const [selectedSources, setSelectedSources] = useState<string[]>([
+    'kalodata',
     'tiktok',
     'meta_ads',
     'amazon',

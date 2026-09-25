@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Product } from '@/lib/db/store';
-import { X, CheckCircle2, ArrowRight, ExternalLink } from 'lucide-react';
+import { X, CheckCircle2, ArrowRight, ExternalLink, Info } from 'lucide-react';
 
 interface ProductDetailModalProps {
   product: Product | null;
@@ -100,25 +100,96 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
             </div>
 
             <div className="grid grid-cols-5 gap-2 font-mono text-center">
-              <div className="bg-white p-2 rounded border border-zinc-200 shadow-2xs">
-                <div className="text-[10px] text-zinc-400">Giá Bán</div>
+              {/* Selling Price */}
+              <div className="group relative bg-white p-2 rounded border border-zinc-200 shadow-2xs hover:border-zinc-400 transition-colors">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-400">
+                  <span>Giá Bán</span>
+                  <Info className="w-2.5 h-2.5 text-zinc-400 hover:text-zinc-600 cursor-help" />
+                </div>
                 <div className="text-xs font-bold text-zinc-900 mt-0.5">${product.selling_price.toFixed(2)}</div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 w-48 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-lg text-left font-sans pointer-events-none">
+                  <div className="font-semibold text-zinc-100 mb-0.5">Giá Bán Đề Xuất (DTC)</div>
+                  <div className="text-zinc-300 leading-relaxed">Áp dụng markup chuẩn 3.4x so với Landed Cost, làm tròn đuôi .99 tâm lý học thương mại điện tử.</div>
+                </div>
               </div>
-              <div className="bg-white p-2 rounded border border-zinc-200 shadow-2xs">
-                <div className="text-[10px] text-zinc-400">Supplier</div>
+
+              {/* Supplier Cost */}
+              <div className="group relative bg-white p-2 rounded border border-zinc-200 shadow-2xs hover:border-zinc-400 transition-colors">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-400">
+                  <span>Supplier</span>
+                  <Info className="w-2.5 h-2.5 text-zinc-400 hover:text-zinc-600 cursor-help" />
+                </div>
                 <div className="text-xs text-zinc-700 mt-0.5">${product.supplier_price.toFixed(2)}</div>
+                {/* Tooltip / Popover with link */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 w-56 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-lg text-left font-sans">
+                  <div className="font-semibold text-zinc-100 flex items-center justify-between mb-0.5">
+                    <span>Nguồn Cung Ứng</span>
+                    <span className="uppercase text-[9px] bg-zinc-800 px-1 py-0.2 rounded text-zinc-300">{product.source}</span>
+                  </div>
+                  <div className="text-zinc-300 leading-relaxed mb-1.5">
+                    Giá nhập sỉ từ xưởng / nhà cung cấp verified ({product.source.toUpperCase()}).
+                  </div>
+                  {product.url && (
+                    <a
+                      href={product.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-sky-400 hover:text-sky-300 font-medium underline"
+                    >
+                      Kiểm chứng link gốc <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+                </div>
               </div>
-              <div className="bg-white p-2 rounded border border-zinc-200 shadow-2xs">
-                <div className="text-[10px] text-zinc-400">Ship</div>
+
+              {/* Shipping Cost */}
+              <div className="group relative bg-white p-2 rounded border border-zinc-200 shadow-2xs hover:border-zinc-400 transition-colors">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-400">
+                  <span>Ship</span>
+                  <Info className="w-2.5 h-2.5 text-zinc-400 hover:text-zinc-600 cursor-help" />
+                </div>
                 <div className="text-xs text-zinc-700 mt-0.5">${product.shipping_cost.toFixed(2)}</div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 w-52 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-lg text-left font-sans pointer-events-none">
+                  <div className="font-semibold text-zinc-100 mb-0.5">Cước Vận Chuyển Quốc Tế</div>
+                  <div className="text-zinc-300 leading-relaxed">
+                    Báo giá đường bay chuẩn tuyến US (YunExpress / 4PX / ePacket 7-12 ngày) cho kiện hàng dưới 250g.
+                  </div>
+                </div>
               </div>
-              <div className="bg-white p-2 rounded border border-zinc-200 shadow-2xs">
-                <div className="text-[10px] text-zinc-400">Gateway</div>
+
+              {/* Payment Gateway */}
+              <div className="group relative bg-white p-2 rounded border border-zinc-200 shadow-2xs hover:border-zinc-400 transition-colors">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-400">
+                  <span>Gateway</span>
+                  <Info className="w-2.5 h-2.5 text-zinc-400 hover:text-zinc-600 cursor-help" />
+                </div>
                 <div className="text-xs text-zinc-700 mt-0.5">${product.payment_fee.toFixed(2)}</div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 w-56 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-lg text-left font-sans pointer-events-none">
+                  <div className="font-semibold text-zinc-100 mb-0.5">Phí Cổng Thanh Toán</div>
+                  <div className="text-zinc-300 leading-relaxed font-mono">
+                    Stripe / Shopify Payments:<br />
+                    2.9% × ${product.selling_price.toFixed(2)} + $0.30 = ${(product.selling_price * 0.029 + 0.30).toFixed(2)}
+                  </div>
+                </div>
               </div>
-              <div className="bg-white p-2 rounded border border-zinc-200 shadow-2xs">
-                <div className="text-[10px] text-zinc-400">Landed</div>
+
+              {/* Landed Cost */}
+              <div className="group relative bg-white p-2 rounded border border-zinc-200 shadow-2xs hover:border-zinc-400 transition-colors">
+                <div className="flex items-center justify-center gap-1 text-[10px] text-zinc-400">
+                  <span>Landed</span>
+                  <Info className="w-2.5 h-2.5 text-zinc-400 hover:text-zinc-600 cursor-help" />
+                </div>
                 <div className="text-xs font-semibold text-zinc-800 mt-0.5">${product.landed_cost.toFixed(2)}</div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover:block z-50 w-60 p-2 bg-zinc-900 text-white text-[10px] rounded shadow-lg text-left font-sans pointer-events-none">
+                  <div className="font-semibold text-zinc-100 mb-0.5">Tổng Giá Vốn Đến Tay Khách</div>
+                  <div className="text-zinc-300 leading-relaxed font-mono">
+                    Supplier (${product.supplier_price.toFixed(2)}) + Ship (${product.shipping_cost.toFixed(2)}) + Gateway (${product.payment_fee.toFixed(2)}) + Hoàn/Hủy 3% (${(product.selling_price * 0.03).toFixed(2)}) = ${product.landed_cost.toFixed(2)}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

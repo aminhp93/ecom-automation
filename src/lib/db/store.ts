@@ -232,7 +232,7 @@ export interface Product {
   no_go_override?: boolean;
   id: string;
   name: string;
-  source: "tiktok" | "meta_ads" | "amazon" | "aliexpress" | "manual";
+  source: "tiktok" | "meta_ads" | "amazon" | "aliexpress" | "kalodata" | "manual";
   url: string;
   image_url: string;
   niche: string;

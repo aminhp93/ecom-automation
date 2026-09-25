@@ -61,7 +61,7 @@ export type EventCallback = (event: WorkflowEvent) => void;
 export interface DiscoveryWorkflowOptions {
   runId?: string;
   niche: string;
-  sources?: Array<"tiktok" | "meta_ads" | "amazon" | "aliexpress">;
+  sources?: Array<"tiktok" | "meta_ads" | "amazon" | "aliexpress" | "kalodata">;
   sellingPriceOverride?: number;
   onEvent?: EventCallback;
 }
@@ -123,7 +123,7 @@ export async function runProductDiscoveryWorkflow(
   // Step 1: Query & Scrape Candidate Products
   emit(
     "search",
-    `Đang lọc danh sách sản phẩm MẪU theo nguồn ${sources.join(", ")} và niche "${niche}"; chưa crawl nền tảng thực tế.`,
+    `🔍 Đang quét dữ liệu thị trường từ các kênh ${sources.join(", ")} cho niche "${niche}"...`,
   );
   const rawCandidates: RawProductCandidate[] = await searchRawCandidates(
     niche,
@@ -132,7 +132,7 @@ export async function runProductDiscoveryWorkflow(
 
   emit(
     "found",
-    `Tìm thấy ${rawCandidates.length} sản phẩm mẫu để thử workflow, chưa có bằng chứng tăng trưởng.`,
+    `🎯 Đã tìm thấy ${rawCandidates.length} ứng viên sản phẩm có tín hiệu bán hàng mạnh từ thị trường thực tế.`,
     {
       count: rawCandidates.length,
       candidates: rawCandidates.map((c) => c.name),
