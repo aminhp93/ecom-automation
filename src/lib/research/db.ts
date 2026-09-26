@@ -1,13 +1,19 @@
 // Đọc dữ liệu Market Research từ Supabase (PostgREST). Chỉ dùng trong Server Components.
 // Ghi dữ liệu do Claude làm qua MCP — web chỉ đọc (RLS: select-only).
-
-const URL = process.env.SUPABASE_URL;
-const KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+import { connection } from 'next/server';
 
 export class ResearchDbError extends Error {}
 
 async function get<T>(path: string): Promise<T> {
-  if (!URL || !KEY) throw new ResearchDbError('Thiếu SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY trong .env.local');
+  // Dữ liệu đổi theo từng lần chụp số liệu → luôn render lúc có request, không prerender lúc build.
+  await connection();
+  const URL = process.env.SUPABASE_URL;
+  const KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!URL || !KEY) {
+    throw new ResearchDbError(
+      'Thiếu biến môi trường SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY (local: .env.local; Vercel: Project Settings → Environment Variables).',
+    );
+  }
   const res = await fetch(`${URL}/rest/v1/${path}`, { headers: { apikey: KEY }, cache: 'no-store' });
   if (!res.ok) throw new ResearchDbError(`${res.status} ${path}: ${await res.text()}`);
   return res.json() as Promise<T>;
