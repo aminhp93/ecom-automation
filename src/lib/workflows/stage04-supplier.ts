@@ -8,6 +8,7 @@ import { aiRouter } from "../ai/router";
 import { calculateFinancials } from "../tools/scoring";
 import { assertStageReady, commitStage } from "./pipeline";
 import { supplierSchema } from "./schemas";
+import { errorMessage } from "@/lib/errors";
 
 export type EventCallback = (event: WorkflowEvent) => void;
 
@@ -135,10 +136,10 @@ Hãy xuất ra JSON hợp lệ với cấu trúc sau:
         `  ↳ AI Logistics (${aiRes.provider.toUpperCase()}): Phân loại hàng [${aiSourcingNotes.freight_sensitivity}]. Đóng gói: ${aiSourcingNotes.packaging_advice}`,
       );
     }
-  } catch (e: any) {
+  } catch (e: unknown) {
     emit(
       "info",
-      `  ↳ ⚠️ AI Logistics không phản hồi (${e?.message || "timeout"}). Áp dụng mô hình benchmark tiêu chuẩn.`,
+      `  ↳ ⚠️ AI Logistics không phản hồi (${errorMessage(e, "timeout")}). Áp dụng mô hình benchmark tiêu chuẩn.`,
     );
   }
 

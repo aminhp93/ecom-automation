@@ -21,6 +21,7 @@ import { AddCustomProductModal } from '@/components/discovery/AddCustomProductMo
 import { AiTokenAuditModal } from '@/components/modals/AiTokenAuditModal';
 
 import { Product, WorkflowEvent } from '@/lib/db/store';
+import { errorMessage } from '@/lib/errors';
 import { ChevronRight, Package, Sparkles, Plus } from 'lucide-react';
 
 export default function EcomOSDashboard() {
@@ -174,15 +175,15 @@ export default function EcomOSDashboard() {
           }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLogs((prev) => [
         ...prev,
         {
           id: `err_${Date.now()}`,
-          timestamp: new Date().toLocaleTimeString(),
+          timestamp: new Date().toISOString(),
           type: 'error',
           stage: '01_PRODUCT_DISCOVERY',
-          message: `Lỗi luồng: ${err?.message || 'Unknown stream error'}`,
+          message: `Lỗi luồng: ${errorMessage(err, 'Unknown stream error')}`,
         },
       ]);
     } finally {
@@ -283,15 +284,15 @@ export default function EcomOSDashboard() {
           }
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setLogs((prev) => [
         ...prev,
         {
           id: `err_${Date.now()}`,
-          timestamp: new Date().toLocaleTimeString(),
+          timestamp: new Date().toISOString(),
           type: 'error',
           stage: `STAGE_${stageNum}`,
-          message: `Lỗi luồng: ${err?.message || 'Error'}`,
+          message: `Lỗi luồng: ${errorMessage(err, 'Error')}`,
         },
       ]);
     } finally {

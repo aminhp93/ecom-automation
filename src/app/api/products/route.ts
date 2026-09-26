@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ecomStore, Product } from "@/lib/db/store";
+import { errorMessage } from "@/lib/errors";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -67,9 +68,9 @@ export async function PATCH(req: NextRequest) {
           ? "Đã duyệt sản phẩm và mở khóa Stage 02: Product Validation!"
           : `Đã cập nhật trạng thái sang "${status}"`,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { success: false, error: err?.message || "Server error" },
+      { success: false, error: errorMessage(err, "Server error") },
       { status: 500 },
     );
   }
@@ -266,9 +267,9 @@ Trả về JSON:
       product: newProduct,
       message: "Đã thêm sản phẩm của bạn vào hệ thống thành công!",
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { success: false, error: err?.message || "Server error" },
+      { success: false, error: errorMessage(err, "Server error") },
       { status: 500 },
     );
   }

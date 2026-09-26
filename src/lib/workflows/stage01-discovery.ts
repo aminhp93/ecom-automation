@@ -13,6 +13,7 @@ import {
 } from "../tools/scoring";
 import { marketingAngleSchema } from "./schemas";
 import { aiRouter } from "../ai/router";
+import { errorMessage } from "@/lib/errors";
 
 const MIN_DOLLAR_MARGIN = 12; // below this, cold paid-social CAC eats the whole margin
 const SAFE_DOLLAR_MARGIN = 18; // thin but workable if a bundle lifts AOV
@@ -227,11 +228,11 @@ QUAN TRỌNG về "marketing_angles":
       if (response.fallbackWarning) {
         emit("info", `  ↳ ⚠️ Cảnh báo Router: ${response.fallbackWarning}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("AI run failed, using fallback heuristic:", err);
       emit(
         "info",
-        `  ↳ ⚠️ AI API lỗi/không phản hồi (${err?.message || "timeout"}). Chuyển sang chấm điểm dự phòng bảo thủ (Heuristic Mode).`,
+        `  ↳ ⚠️ AI API lỗi/không phản hồi (${errorMessage(err, "timeout")}). Chuyển sang chấm điểm dự phòng bảo thủ (Heuristic Mode).`,
       );
     }
 

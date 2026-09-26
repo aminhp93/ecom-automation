@@ -6,31 +6,35 @@ import { runOfferCreationWorkflow } from "@/lib/workflows/stage05-offer";
 import { runCreativeProductionWorkflow } from "@/lib/workflows/stage06-creative";
 import { ecomStore, WorkflowEvent, WorkflowRun } from "@/lib/db/store";
 import { randomUUID } from "node:crypto";
+import { z } from "zod";
+import { errorMessage } from "@/lib/errors";
+
+export const dynamic = "force-dynamic";
+// AI stages can take minutes; raise the platform timeout (seconds).
+export const maxDuration = 300;
+
+const runStageBody = z.object({
+  productId: z.string().trim().min(1, "productId là bắt buộc"),
+  stage: z.enum(["02", "03", "04", "05", "06"]),
+  allowNoGoOverride: z.boolean().optional(),
+});
 
 export async function POST(req: NextRequest) {
-  const body = await req.json().catch(() => ({}));
-  if (!body || typeof body !== "object" || Array.isArray(body)) {
+  const json = await req.json().catch(() => null);
+  const parsed = runStageBody.safeParse(json);
+  if (!parsed.success) {
     return Response.json(
-      { error: "Body phải là JSON object." },
+      {
+        error: "Body không hợp lệ.",
+        issues: parsed.error.issues.map((i) => ({
+          path: i.path.join("."),
+          message: i.message,
+        })),
+      },
       { status: 400 },
     );
   }
-  const { productId, stage, allowNoGoOverride } = body;
-
-  if (
-    typeof productId !== "string" ||
-    !productId.trim() ||
-    !["02", "03", "04", "05", "06"].includes(stage) ||
-    (allowNoGoOverride !== undefined && typeof allowNoGoOverride !== "boolean")
-  ) {
-    return new Response(
-      JSON.stringify({ error: "Missing productId or stage" }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      },
-    );
-  }
+  const { productId, stage, allowNoGoOverride } = parsed.data;
 
   const encoder = new TextEncoder();
   const product = ecomStore.getProductById(productId);
@@ -50,8 +54,15 @@ export async function POST(req: NextRequest) {
     discovered_count: 0,
   };
 
+  let clientGone = false;
   const stream = new ReadableStream({
+    cancel() {
+      clientGone = true;
+    },
     async start(controller) {
+      req.signal?.addEventListener("abort", () => {
+        clientGone = true;
+      });
       // Keep-alive heartbeat ping every 5 seconds to prevent proxy/browser timeout
       const pingInterval = setInterval(() => {
         try {
@@ -63,6 +74,7 @@ export async function POST(req: NextRequest) {
 
       const sendEvent = (event: WorkflowEvent) => {
         run.logs.push(event);
+        if (clientGone) return;
         try {
           const payload = `data: ${JSON.stringify(event)}\n\n`;
           controller.enqueue(encoder.encode(payload));
@@ -99,14 +111,14 @@ export async function POST(req: NextRequest) {
         }
         run.status = "completed";
         run.progress = 100;
-      } catch (err: any) {
+      } catch (err: unknown) {
         run.status = "failed";
         sendEvent({
-          id: `err_${Date.now()}`,
-          timestamp: new Date().toLocaleTimeString(),
+          id: randomUUID(),
+          timestamp: new Date().toISOString(),
           type: "error",
           stage: `STAGE_${stage}`,
-          message: `Lỗi thực thi: ${err?.message || "Unknown error"}`,
+          message: `Lỗi thực thi: ${errorMessage(err)}`,
         });
       } finally {
         clearInterval(pingInterval);
@@ -128,7 +140,11 @@ export async function POST(req: NextRequest) {
               "Không lưu được nhật ký; cần kiểm tra store trước khi chạy lại.",
           });
         }
-        controller.close();
+        try {
+          controller.close();
+        } catch {
+          // already closed by client disconnect
+        }
       }
     },
   });

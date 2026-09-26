@@ -9,6 +9,7 @@ import {
 } from "../db/store";
 import { aiRouter } from "../ai/router";
 import { assertStageReady, commitStage } from "./pipeline";
+import { errorMessage } from "@/lib/errors";
 import {
   creativeSchema,
   marketingAngleSchema,
@@ -418,12 +419,12 @@ Trả về JSON:
     } else {
       throw new Error("Incomplete JSON");
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     dataQuality = "mock";
     raw = fallback;
     emit(
       "info",
-      `  ↳ ⚠️ AI gặp sự cố (${err?.message || "timeout"}). Dùng bộ creative dự phòng (hook/kịch bản là khung, cần người viết trau).`,
+      `  ↳ ⚠️ AI gặp sự cố (${errorMessage(err, "timeout")}). Dùng bộ creative dự phòng (hook/kịch bản là khung, cần người viết trau).`,
     );
   }
 

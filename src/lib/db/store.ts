@@ -232,7 +232,13 @@ export interface Product {
   no_go_override?: boolean;
   id: string;
   name: string;
-  source: "tiktok" | "meta_ads" | "amazon" | "aliexpress" | "kalodata" | "manual";
+  source:
+    | "tiktok"
+    | "meta_ads"
+    | "amazon"
+    | "aliexpress"
+    | "kalodata"
+    | "manual";
   url: string;
   image_url: string;
   niche: string;
@@ -381,7 +387,15 @@ export function advanceStageStatus(
   return next;
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+// Project dir is read-only on serverless (Vercel); fall back to /tmp there.
+// NOTE: /tmp is per-instance & ephemeral — use ECOM_DATA_DIR on a persistent
+// volume, or move to a real database, for durable production storage.
+const STORE_ENV: Record<string, string | undefined> = process.env ?? {};
+const DATA_DIR =
+  STORE_ENV.ECOM_DATA_DIR ||
+  (STORE_ENV.VERCEL
+    ? path.join("/tmp", "ecom-data")
+    : path.join(process.cwd(), ".data"));
 const DATA_FILE = path.join(DATA_DIR, "ecom_store.json");
 
 // Initial seed products with rich sample data for immediate exploration
@@ -434,13 +448,16 @@ const SEED_PRODUCTS: Product[] = [
         name: "Mất ngủ 2h sáng",
         sub_audience:
           "Bố mẹ con 4-12 tháng, bị đánh thức 3-4 lần mỗi đêm nhiều tuần liền, kiệt sức",
-        core_emotion: "Tuyệt vọng, kiệt sức, thấy có lỗi vì mất kiên nhẫn với con",
-        belief_to_shift: "Con mọc răng thì cả nhà phải chịu mất ngủ, rồi cũng qua",
+        core_emotion:
+          "Tuyệt vọng, kiệt sức, thấy có lỗi vì mất kiên nhẫn với con",
+        belief_to_shift:
+          "Con mọc răng thì cả nhà phải chịu mất ngủ, rồi cũng qua",
         promise: "Một cách dỗ con lúc nửa đêm nhẹ nhàng hơn để cả nhà ngủ tiếp",
         proof_needed:
           "Quay cảnh dùng thật lúc tối theo hướng dẫn; KHÔNG hứa 'ngủ ngay', không nói số phút cụ thể",
         awareness_level: "problem_aware",
-        recommended_format: "UGC talking-head mẹ quay trong phòng bé lúc tối + b-roll",
+        recommended_format:
+          "UGC talking-head mẹ quay trong phòng bé lúc tối + b-roll",
         source_evidence:
           "Review 1-3 sao đối thủ: 'thức dậy 3-4 lần mỗi đêm', 'cả nhà kiệt sức'",
         hooks: [
@@ -497,7 +514,8 @@ const SEED_PRODUCTS: Product[] = [
         sub_audience:
           "Bố mẹ kỹ tính về vệ sinh, thấy gợn khi phải thọc ngón tay bôi gel vào nướu con",
         core_emotion: "Gợn, lo vi khuẩn từ tay người lớn",
-        belief_to_shift: "Bôi gel bằng ngón tay vào nướu con là chuyện bình thường",
+        belief_to_shift:
+          "Bôi gel bằng ngón tay vào nướu con là chuyện bình thường",
         promise:
           "Dùng bên ngoài viền hàm — không đưa ngón tay hay sản phẩm vào miệng con",
         proof_needed:
@@ -1253,7 +1271,8 @@ const SEED_PRODUCTS: Product[] = [
     ],
     compliance_flags: [
       {
-        claim: "Bất kỳ câu nào hứa 'ngủ ngay', giảm đau, an toàn tuyệt đối hoặc số phút cụ thể",
+        claim:
+          "Bất kỳ câu nào hứa 'ngủ ngay', giảm đau, an toàn tuyệt đối hoặc số phút cụ thể",
         risk: "Meta/TikTok duyệt gắt ngành trẻ em/sức khoẻ — dễ bị từ chối hoặc khoá tài khoản.",
         compliant_rewrite:
           "Chỉ mô tả cách dùng và trải nghiệm cá nhân; dẫn nguồn nhà sản xuất cho mọi tuyên bố công dụng.",

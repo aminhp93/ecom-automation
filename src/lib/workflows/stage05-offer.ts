@@ -3,6 +3,7 @@ import { aiRouter } from "../ai/router";
 import { assertStageReady, commitStage } from "./pipeline";
 import { offerSchema } from "./schemas";
 import { buildOfferPackages } from "./offer-economics";
+import { errorMessage } from "@/lib/errors";
 
 export type EventCallback = (event: WorkflowEvent) => void;
 
@@ -160,11 +161,11 @@ Yêu cầu định dạng JSON:
     } else {
       throw new Error("Incomplete JSON");
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     dataQuality = "mock";
     emit(
       "info",
-      `  ↳ ⚠️ AI Router gặp lỗi (${err?.message || "timeout"}), sử dụng thuật toán thiết kế offer dự phòng.`,
+      `  ↳ ⚠️ AI Router gặp lỗi (${errorMessage(err, "timeout")}), sử dụng thuật toán thiết kế offer dự phòng.`,
     );
     offerData = {
       positioning_statement: `Bản nháp giới thiệu ${product.name} — cần kiểm chứng công dụng trước khi xuất bản.`,

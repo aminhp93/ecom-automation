@@ -20,7 +20,9 @@ async function get<T>(path: string): Promise<T> {
 }
 
 const inList = (values: string[]) =>
-  `in.(${values.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(',')})`;
+  `in.(${values
+    .map((v) => `"${v.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`)
+    .join(',')})`;
 const q = (s: string) => encodeURIComponent(s);
 
 export type Decision = 'chon_chinh' | 'chon_phu' | 'du_phong' | 'khong_chon';

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aiRouter } from '@/lib/ai/router';
 import { ecomStore } from '@/lib/db/store';
+import { errorMessage } from '@/lib/errors';
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,9 +47,9 @@ Hãy trả lời ngắn gọn, sắc bén, mang tính tư vấn chiến lược 
       model: response.model,
       costUsd: response.costUsd,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     return NextResponse.json(
-      { success: false, error: err?.message || 'Chat error' },
+      { success: false, error: errorMessage(err, 'Chat error') },
       { status: 500 }
     );
   }

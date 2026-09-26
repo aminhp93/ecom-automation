@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { Product } from "@/lib/db/store";
 import { creativeSchema } from "@/lib/workflows/schemas";
+import { errorMessage } from "@/lib/errors";
 import {
   Play,
   Loader2,
@@ -143,8 +144,8 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
       } else {
         setMediaError(data.error || "Không thể tạo ảnh.");
       }
-    } catch (err: any) {
-      setMediaError(err?.message || "Lỗi kết nối khi tạo ảnh.");
+    } catch (err: unknown) {
+      setMediaError(errorMessage(err, "Lỗi kết nối khi tạo ảnh."));
     } finally {
       setGeneratingAssetId(null);
     }
@@ -178,8 +179,8 @@ export const Stage06CreativeView: React.FC<Stage06CreativeViewProps> = ({
       } else {
         setMediaError(data.message || data.error || "Không thể tạo video.");
       }
-    } catch (err: any) {
-      setMediaError(err?.message || "Lỗi kết nối khi tạo video.");
+    } catch (err: unknown) {
+      setMediaError(errorMessage(err, "Lỗi kết nối khi tạo video."));
     } finally {
       setGeneratingAssetId(null);
     }

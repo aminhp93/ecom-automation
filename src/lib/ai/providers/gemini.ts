@@ -84,7 +84,7 @@ export class GeminiProvider implements AIProvider {
         costUsd: 0.0, // Free tier
         latencyMs,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Gemini generate error:', error);
       throw error;
     }

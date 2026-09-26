@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { generateProductImage } from "@/lib/ai/media/image-generator";
 import { ecomStore } from "@/lib/db/store";
+import { errorMessage } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -66,10 +67,10 @@ export async function POST(req: NextRequest) {
       provider: result.provider,
       promptUsed: result.promptUsed,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Image generation route error:", error);
     return Response.json(
-      { error: error?.message || "Đã xảy ra lỗi khi tạo ảnh." },
+      { error: errorMessage(error, "Đã xảy ra lỗi khi tạo ảnh.") },
       { status: 500 }
     );
   }

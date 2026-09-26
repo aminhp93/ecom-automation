@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { generateFalVideo } from "@/lib/ai/media/fal-video";
 import { ecomStore } from "@/lib/db/store";
+import { errorCode, errorMessage } from "@/lib/errors";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -64,13 +65,13 @@ export async function POST(req: NextRequest) {
       requestId: result.requestId,
       modelUsed: result.modelUsed,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Video generation route error:", error);
-    const isMissingKey = error?.code === "MISSING_FAL_KEY";
+    const isMissingKey = errorCode(error) === "MISSING_FAL_KEY";
     return Response.json(
       {
         error: isMissingKey ? "MISSING_FAL_KEY" : "GENERATION_FAILED",
-        message: error?.message || "Đã xảy ra lỗi khi tạo video.",
+        message: errorMessage(error, "Đã xảy ra lỗi khi tạo video."),
       },
       { status: isMissingKey ? 400 : 500 }
     );

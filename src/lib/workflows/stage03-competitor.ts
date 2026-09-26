@@ -7,6 +7,7 @@ import {
 import { aiRouter } from "../ai/router";
 import { competitorSchema } from "./schemas";
 import { assertStageReady, commitStage } from "./pipeline";
+import { errorMessage } from "@/lib/errors";
 
 export type EventCallback = (event: WorkflowEvent) => void;
 
@@ -174,11 +175,11 @@ Trả về JSON cấu trúc:
     } else {
       throw new Error("Incomplete JSON");
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     dataQuality = "mock";
     emit(
       "info",
-      `  ↳ ⚠️ AI API gặp sự cố (${err?.message || "timeout"}). Khởi tạo bộ đối thủ chuẩn hóa động theo ngành hàng.`,
+      `  ↳ ⚠️ AI API gặp sự cố (${errorMessage(err, "timeout")}). Khởi tạo bộ đối thủ chuẩn hóa động theo ngành hàng.`,
     );
 
     // Dynamic fallback generation based on product name & category (NOT hardcoded to teething oil)
