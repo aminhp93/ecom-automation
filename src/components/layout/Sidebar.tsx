@@ -36,7 +36,7 @@ interface SidebarProps {
 
 // 6 Core Active Execution Stages (V1 Complete Pipeline)
 const CORE_STAGES = [
-  { id: '01', name: '01 Product Discovery', shortName: 'Discovery', icon: Compass },
+  { id: '01', name: '01 Market Research', shortName: 'Research', icon: Compass },
   { id: '02', name: '02 Product Validation', shortName: 'Validation', icon: CheckCircle2 },
   { id: '03', name: '03 Competitor Research', shortName: 'Competitors', icon: Users },
   { id: '04', name: '04 Supplier & Economics', shortName: 'Economics', icon: Truck },

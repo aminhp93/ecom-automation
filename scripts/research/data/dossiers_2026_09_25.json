@@ -1,0 +1,28 @@
+{
+  "teething-roller-snuglet": {
+    "verdict": "Không chọn",
+    "decision": "khong_chon",
+    "headline": "Quảng cáo thắng thật, nhưng thắng nhờ claim giảm đau mà mình không nên dùng",
+    "revisit": "Khi đã có 1–2 SP thành công và có quy trình kiểm định an toàn/pháp lý cho hàng trẻ em",
+    "body_md": "## Kết luận\nKhông làm lúc này. Anh Thanh: làm thành công 1–2 SP rồi mới đi ngách này, không làm ngay từ đầu.\n\n## Số liệu (25/09/2026)\n| Chỉ số | Số liệu |\n|---|---|\n| Amazon AU | teething toys 4.2k, teether 3.1k, baby teether 2.9k search/tháng; giá chỉ A$12–17 |\n| Amazon US | teething toys 144k search/tháng, tỷ lệ mua 4.6% (cao), giá TB $9.99 |\n| Meta AU | \"teething\" 1,093 ad đang chạy, 24/30 ad chạy >60 ngày |\n| Brand thắng | Obvira: 112 ad đang chạy (101 ở AU), tổng 457, có ad ~16 tháng. Copa Calmer: 57/57 ad đang chạy, 51 ở AU |\n\n## Vấn đề nếu chọn\n- **Góc quảng cáo thắng là claim trị liệu.** Obvira: \"#1 Natural solution to teething pain\"; Copa Calmer dùng lời kể \"đã thử cả thuốc giảm đau\". Ở AU claim giảm đau có nguy cơ bị xem là hàng trị liệu (TGA) — chưa đối chiếu văn bản chính thức.\n- Obvira còn bán dầu \"organic\" lăn lên má bé → chất lỏng (khó ship) + rủi ro dị ứng da trẻ sơ sinh.\n- Bỏ claim thì chỉ còn đồ gặm A$12–17, cạnh tranh với Baby Bunting, Kmart.\n- Đồ chơi cho bé dưới 36 tháng phải qua tiêu chuẩn an toàn bắt buộc về chi tiết nhỏ gây hóc; cần giấy test silicone thực phẩm cho đúng lô hàng. Người bán dropship bị coi như nhà nhập khẩu → chịu trách nhiệm nếu có sự cố.\n- Bé chỉ dùng ~4–24 tháng → không có khách quay lại."
+  },
+  "no-pull-dog-harness": {
+    "verdict": "Không chọn",
+    "decision": "khong_chon",
+    "headline": "Đã có người thắng lớn, nhưng đối thủ AU có kho Sydney + hoàn tiền 60 ngày",
+    "revisit": "Khi có kho/fulfilment tại AU và ngân sách test lớn",
+    "body_md": "## Kết luận\nKhông làm. Anh Thanh đang làm được nhờ nhiều tài khoản quảng cáo, dữ liệu khách cũ, đội làm content chó mèo và ngân sách test.\n\n## Số liệu (25/09/2026)\n| Chỉ số | Số liệu |\n|---|---|\n| Amazon AU | dog harness 8.9k search/tháng (A$27), 40% click dồn vào vài SKU; no pull dog harness 2.7k |\n| Amazon US | dog harness 453k, no pull 158k search/tháng; giá TB chỉ $14–17 |\n| Meta AU | \"no pull harness\" 324 ad đang chạy, 25/30 ad >60 ngày |\n| Brand thắng | Pawezy 415 ad (325 AU), ad dài nhất 426 ngày; Pups Furry (dogharnessaustralia.com) ad 904 ngày; Dog Friendly Co. 2,356 ad; The No.1 No Pulling Dog Harness AU 47 ad |\n\n## Rào cản cụ thể\n- Đối thủ quảng cáo \"Free Express Shipping From Sydney\" + hoàn tiền 60 ngày → hàng từ Trung Quốc 7–15 ngày không cạnh tranh được.\n- Nhiều size × dáng từng giống chó → đổi size nhiều; gửi trả về Trung Quốc không kinh tế → hoàn tiền, mất hàng.\n- Claim \"hết kéo\" → khiếu nại/chargeback nếu chó vẫn kéo.\n- Cần video chó thật demo trước/sau.\n- Anh Thanh: CPM ngách này \"siêu cao\"; vốn 3–4 nghìn đô, test hỏng vài phát là hết."
+  },
+  "tech-pouch": {
+    "verdict": "Chọn – SP phụ",
+    "decision": "chon_phu",
+    "headline": "SP phụ cho store du lịch — nhánh EDC 'sạch' duy nhất có số liệu ổn ở AU",
+    "revisit": "Có báo giá + so với Orbitkey/Peak Design",
+    "body_md": "## Kết luận\nChỉ làm SP phụ trong store \"Travel & Everyday Carry Organizer\" (SP chính: túi chia đồ nén).\n\n## Số liệu (25/09/2026)\n| Chỉ số | Số liệu |\n|---|---|\n| Amazon AU | 3.1k search/tháng, giá TB A$37 |\n| Amazon US | 48.5k search/tháng, $19 |\n| Amazon UK | 7.1k search, tỷ lệ mua 3.5% |\n| Meta AU | \"tech pouch\" 52 ad, chỉ 2/30 ad >60 ngày; Orbitkey (brand Melbourne, 1,075 ad đang chạy), Peak Design, dự án crowdfunding |\n\n## Nhận xét\n- Hợp chính sách (không dao, không pin), nhẹ, bán kèm tốt với packing cubes và túi cáp.\n- Orbitkey có \"Travel Collection\" → hướng gộp du lịch + EDC là đúng, nhưng Orbitkey cũng là đối thủ trực tiếp ở AU.\n- Ít ad chạy lâu → chưa có bằng chứng DTC nhỏ bán có lãi riêng SP này; chỉ nên làm SP kèm."
+  },
+  "rfid-wallet": {
+    "verdict": "Chưa quyết",
+    "headline": "EDC 'sạch': US rất mạnh nhưng AU nhỏ và do brand (Bellroy, Lost Dutchman) chiếm",
+    "body_md": "## Nhận xét\n- Amazon AU: rfid wallet 2.8k, mens wallet 6.9k, slim wallet 1.4k, minimalist wallet 705 search/tháng.\n- Amazon US: rfid wallet 39.5k search với tỷ lệ mua **11%**, pop up wallet 9.7%, carbon fiber wallet 9.3% → nhu cầu mua thật ở US.\n- Meta AU: \"everyday carry\" 2,822 ad; người thắng là brand: Bellroy (Melbourne, 683 ad), Lost Dutchman Leather (576 ad, ad 872 ngày), Orbitkey. Page nhỏ test \"minimalist wallet\" đều mới, ad dài nhất 4–29 ngày, chỉ 2/30 ad >60 ngày → dropship test ví rồi tắt sớm.\n- Kết luận tạm: ở AU là cuộc chơi thương hiệu/chất liệu; chỉ đáng xem lại nếu mở thị trường US."
+  }
+}

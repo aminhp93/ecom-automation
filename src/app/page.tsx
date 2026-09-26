@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { DiscoveryConsole } from '@/components/discovery/DiscoveryConsole';
@@ -22,6 +24,7 @@ import { Product, WorkflowEvent } from '@/lib/db/store';
 import { ChevronRight, Package, Sparkles, Plus } from 'lucide-react';
 
 export default function EcomOSDashboard() {
+  const router = useRouter();
   const [currentStage, setCurrentStage] = useState('01');
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -333,7 +336,7 @@ export default function EcomOSDashboard() {
       {/* 6-Stage Core V1 + Roadmap Sidebar */}
       <Sidebar
         currentStage={currentStage}
-        onSelectStage={(stage) => setCurrentStage(stage)}
+        onSelectStage={(stage) => (stage === '01' ? router.push('/research') : setCurrentStage(stage))}
         activeProduct={activeWorkingProduct}
         stats={stats}
         providers={providers}
@@ -392,6 +395,13 @@ export default function EcomOSDashboard() {
             {/* STAGE 01: Product Discovery */}
             {currentStage === '01' && (
               <>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-900 flex flex-wrap items-center justify-between gap-2">
+                  <span>
+                    Stage 01 đã chuyển sang <b>Market Research</b> (số liệu thật từ Supabase, bộ tiêu chí có phiên bản, hồ sơ từng SP).
+                    Phần Discovery bên dưới dùng dữ liệu mẫu/AI — không dùng để ra quyết định.
+                  </span>
+                  <Link href="/research" className="px-2.5 py-1 rounded-md bg-zinc-900 text-white font-medium">Mở Market Research →</Link>
+                </div>
                 <DiscoveryConsole
                   onRunWorkflow={handleRunDiscovery}
                   isRunning={isRunning}
