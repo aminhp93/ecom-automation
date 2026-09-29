@@ -2,7 +2,7 @@
 
 Nguồn:
   - pipeline-san-pham-2026-09-23.xlsx (Google Drive) — 91 SP + các sheet dữ liệu thô
-  - workspace/doc/1-market-research/7-pipeline-san-pham-2026-09-23/raw/ — JSON/TSV gốc + 2026-09-25.json
+  - Drive Dropship/research-raw/2026-09-23-pipeline/ — JSON/TSV gốc + 2026-09-25.json
   - link-meta-pages.gs — page_id Facebook của từng brand
   - data/eval_2026_09_25.py — quyết định + nhận xét từng SP
 
@@ -13,8 +13,9 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parents[2]
-RAW = ROOT.parent / "workspace/doc/1-market-research/7-pipeline-san-pham-2026-09-23/raw"
-DRIVE = Path.home() / "Library/CloudStorage/GoogleDrive-minhpham0529@gmail.com/My Drive/Dropship/tai lieu chung"
+DRIVE_ROOT = Path.home() / "Library/CloudStorage/GoogleDrive-minhpham0529@gmail.com/My Drive/Dropship"
+RAW = DRIVE_ROOT / "research-raw/2026-09-23-pipeline"
+DRIVE = DRIVE_ROOT / "tai lieu chung"
 XLSX = DRIVE / "pipeline-san-pham-2026-09-23.xlsx"
 sys.path.insert(0, str(Path(__file__).parent / "data"))
 from eval_2026_09_25 import E, CHON_CHINH, CHON_PHU, CHON_DP, KHONG  # noqa: E402

@@ -1,5 +1,5 @@
 // Nhãn + định dạng dùng chung cho Market Research (an toàn cho cả client & server).
-import type { Decision } from './db';
+import type { Decision, Readiness } from './db';
 
 export const DECISION_LABEL: Record<Decision, string> = {
   chon_chinh: 'Chọn – SP chính',
@@ -56,3 +56,32 @@ export const scoreClass = (v: number | null | undefined) =>
         : 'text-rose-700';
 
 export const PRICE_PREFIX: Record<string, string> = { US: '$', AU: 'A$', UK: '£' };
+
+
+export const READINESS: { key: Readiness; label: string; hint: string; cls: string }[] = [
+  { key: 'san_sang', label: 'Sẵn sàng quyết định', hint: 'Qua lọc cứng + đủ bằng chứng bắt buộc', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { key: 'can_xac_minh', label: 'Cần xác minh', hint: 'Còn thiếu bằng chứng bắt buộc hoặc ô an toàn chưa đánh giá', cls: 'bg-amber-50 text-amber-800 border-amber-200' },
+  { key: 'rot_loc_cung', label: 'Rớt lọc cứng', hint: 'Rớt ít nhất 1 điều kiện lọc cứng', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+];
+export const READINESS_LABEL = Object.fromEntries(READINESS.map((r) => [r.key, r.label])) as Record<Readiness, string>;
+export const READINESS_CLASS = Object.fromEntries(READINESS.map((r) => [r.key, r.cls])) as Record<Readiness, string>;
+
+export const CHECK_LABEL: Record<string, string> = {
+  competitors_au: 'Đối thủ AU (đã xác nhận đúng SP)',
+  marketplace_presence: 'Sàn có bán đúng phiên bản SP',
+  safety: 'An toàn / chính sách',
+  variant: 'Phiên bản SP',
+  landed_cost: 'Giá vốn về AU',
+  barrier: 'Rào cản với sàn',
+  competitor_model: 'Mô hình đối thủ (local / dropship)',
+  policy: 'Chính sách đối thủ',
+  content: 'Content',
+  sourcing: 'Nguồn hàng (xưởng có làm được không)',
+  ip: 'Bằng sáng chế / sở hữu trí tuệ',
+};
+
+export const MATCH_LABEL: Record<string, { label: string; cls: string }> = {
+  yes: { label: 'Đúng SP', cls: 'text-emerald-700' },
+  no: { label: 'Khác SP', cls: 'text-rose-700' },
+  unverified: { label: 'Chưa xác nhận', cls: 'text-zinc-400' },
+};

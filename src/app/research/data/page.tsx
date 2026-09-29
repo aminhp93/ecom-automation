@@ -8,14 +8,17 @@ export default async function DataQualityPage() {
   const [fresh, rows] = await Promise.all([getFreshness(), getOverview()]);
   const missing = [
     { label: 'Thiếu search Amazon AU', list: rows.filter((r) => r.au_searches === null) },
-    { label: 'Thiếu số liệu Meta AU', list: rows.filter((r) => r.meta_active_ads === null) },
-    { label: 'Chưa có đối thủ quảng cáo nào được gắn', list: rows.filter((r) => r.adswin_pages === 0 && r.marketplace_pages === 0) },
-    { label: 'Chưa có giá vốn về AU (landed cost)', list: rows.filter((r) => r.decision && r.decision !== 'khong_chon' && r.landed_cost === null) },
+    { label: 'Chưa có mẫu Meta AU ≥ 20 ad', list: rows.filter((r) => (r.meta_au_sample ?? 0) < 20) },
+    { label: 'Chưa quét & xác nhận đối thủ AU', list: rows.filter((r) => r.ad_signal_brands === null) },
+    { label: 'Chưa đánh giá rào cản với sàn (tiêu chí anh Thanh)', list: rows.filter((r) => r.marketplace_barrier === null) },
+    { label: 'Đang chọn nhưng chưa có giá vốn về AU', list: rows.filter((r) => r.decision && r.decision !== 'khong_chon' && r.landed_cost === null) },
   ];
   return (
     <>
       <section>
         <h1 className="text-lg font-semibold text-zinc-900">Chất lượng & độ mới của dữ liệu</h1>
+          <p className="text-sm font-medium text-zinc-800 mt-2">Biết dữ liệu nào còn thiếu hoặc cần cập nhật</p>
+          <p className="text-sm text-zinc-600 mt-1 max-w-2xl">Kiểm tra ngày lấy số và những bằng chứng còn thiếu. Chọn một sản phẩm trong danh sách bên dưới để xem chi tiết và bổ sung dữ liệu.</p>
         <p className="text-xs text-zinc-500 mt-1 max-w-2xl">
           Mỗi lần Claude kéo số là một bản chụp theo ngày — không ghi đè. Số của Topview là <b>ước tính</b> (Amazon không công khai
           search/đơn tuyệt đối); “mua từ keyword” chỉ là lượt mua từ đúng keyword đó, không phải tổng doanh số.
@@ -40,6 +43,7 @@ export default async function DataQualityPage() {
       </section>
 
       <section className="grid md:grid-cols-2 gap-4">
+        <p className="md:col-span-2 text-xs text-zinc-500">Ô trống nghĩa là <b>chưa kiểm tra</b> — không được tính như “0” hay “không có”.</p>
         {missing.map((m) => (
           <div key={m.label} className="bg-white border border-zinc-200 rounded-lg p-4">
             <h2 className="text-xs font-semibold mb-2">{m.label} ({m.list.length})</h2>
