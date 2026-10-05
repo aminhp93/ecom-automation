@@ -582,7 +582,7 @@ export function CompetitorAds({
           <div className="flex flex-wrap items-start gap-4">
             <div className="text-center">
               <span className={`inline-block px-2 py-1 rounded border text-sm font-semibold ${VERDICT_CLS[w.verdict] ?? 'border-zinc-200'}`}>{VERDICT_LABEL[w.verdict] ?? w.verdict}</span>
-              {w.win_probability !== null && <div className="text-[11px] text-zinc-500 mt-1">~{Math.round(w.win_probability * 100)}% ra lãi</div>}
+              <div className="text-[11px] text-zinc-500 mt-1">Nhận định nghiên cứu, chưa phải xác suất có lãi đã kiểm chứng.</div>
             </div>
             {w.summary && <p className="flex-1 min-w-[260px] text-sm text-zinc-800">{w.summary}</p>}
           </div>

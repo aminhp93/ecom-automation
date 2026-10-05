@@ -134,7 +134,7 @@ export default async function ProductDossierPage({
     { key: 'overview', label: 'Tổng quan' },
     { key: 'competitors', label: 'Đối thủ & ads', count: d.advertisers.length },
     { key: 'angles', label: 'Angle', count: angleCount || undefined },
-    { key: 'win', label: 'Khả năng win' },
+    { key: 'win', label: 'Cơ hội & rủi ro' },
     { key: 'dossier', label: dossier ? `Hồ sơ v${dossier.version}` : 'Hồ sơ' },
     { key: 'market', label: 'Số liệu thị trường' },
     { key: 'score', label: 'Điểm & kiểm tra' },
@@ -250,7 +250,17 @@ export default async function ProductDossierPage({
         tabs={TABS}
         initial={tab}
         panels={{
-          overview: <ProductOverviewTab d={d} current={current} tabHref={tabHref} />,
+          overview: <><ProductOverviewTab d={d} current={current} tabHref={tabHref} />
+            <Card title="Trước khi chọn để thử">
+              <p className="text-xs text-zinc-500 mb-3">Checklist bắt buộc khi viết hồ sơ mới. Điểm và mức sẵn sàng hiện hành chưa xác nhận các mục này đã hoàn tất.</p>
+              <ol className="list-decimal pl-4 space-y-2 text-sm text-zinc-700">
+                <li><b>Khách hàng & vấn đề:</b> Ai ở AU cần sản phẩm, dùng khi nào, bằng chứng từ review/phản hồi nào?</li>
+                <li><b>Offer khác biệt:</b> Sản phẩm, giá, bundle, thời gian giao và lý do mua của mình thay vì sàn hoặc đối thủ.</li>
+                <li><b>Kinh tế đơn hàng:</b> Doanh thu thuần trừ hàng, ship, phí và dự phòng hoàn trả; phần còn lại là trần chi phí thu hút khách hòa vốn.</li>
+                <li><b>Kế hoạch thử:</b> Giả thuyết, ngân sách giới hạn, chỉ số đánh giá và điều kiện dừng. Chưa có dữ liệu thì ghi rõ chưa xác minh.</li>
+              </ol>
+              <div className="mt-3"><CopyCommand label="Bổ sung hồ sơ trước khi thử" command={`/dropship-research dossier ${o.slug}`} /></div>
+            </Card></>,
           competitors: (
             <CompetitorAds
               advertisers={d.advertisers}

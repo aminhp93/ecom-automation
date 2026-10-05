@@ -462,15 +462,10 @@ export default function EcomOSDashboard() {
               />
             )}
 
-            {/* STAGE 06: Creative & Store Page Engine (Claude Sonnet 4.5) */}
-            {currentStage === '06' && (
-              <Stage06CreativeView
-                product={activeWorkingProduct}
-                onRunStage={() => handleRunStage('06')}
-                isRunning={isRunning}
-                onGoToRoadmap={() => setCurrentStage('07')}
-              />
-            )}
+            {/* STAGE 06: Scene-based video builder */}
+            <div className={currentStage === '06' ? '' : 'hidden'}>
+              <Stage06CreativeView product={activeWorkingProduct} />
+            </div>
 
             {/* STAGES 07 - 12: Planned Future Stages (Roadmap V2) */}
             {['07', '08', '09', '10', '11', '12'].includes(currentStage) && (

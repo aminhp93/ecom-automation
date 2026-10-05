@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ResearchNav } from '@/components/research/ResearchNav';
+import { BasisTabs } from '@/components/research/BasisTabs';
 
 export const metadata: Metadata = {
   title: 'Market Research — Ecom OS',
@@ -10,7 +11,10 @@ export default function ResearchLayout({ children }: { children: React.ReactNode
   return (
     <div className="min-h-screen bg-[#fafafa]">
       <ResearchNav />
-      <main className="max-w-6xl mx-auto px-5 py-5 space-y-4">{children}</main>
+      <main className="max-w-6xl mx-auto px-5 py-5 space-y-4">
+        <BasisTabs />
+        {children}
+      </main>
     </div>
   );
 }

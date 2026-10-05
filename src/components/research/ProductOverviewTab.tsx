@@ -80,7 +80,7 @@ export function ProductOverviewTab({ d, current, tabHref }: { d: ProductDetail; 
         <Tile label={`Điểm ${current?.version ?? ''}`} sub={current ? `dữ liệu ${Math.round((current.completeness ?? 0) * 100)}%` : null}>
           <span className={scoreClass(current?.total)}>{fmtScore(current?.total)}</span>
         </Tile>
-        <Tile label="Khả năng win (AU)" sub={winAU?.win_probability !== null && winAU?.win_probability !== undefined ? `~${Math.round(winAU.win_probability * 100)}% ra lãi` : null}>
+<Tile label="Đánh giá nghiên cứu AU" sub="Nhận định định tính · chưa phải kết quả thử bán">
           {winAU ? <span className={VERDICT_CLS[winAU.verdict]}>{VERDICT_LABEL[winAU.verdict] ?? winAU.verdict}</span> : '—'}
         </Tile>
         <Tile label="Search Amazon AU/tháng" sub={o.keyword ?? undefined}>{fmtNum(o.au_searches)}</Tile>

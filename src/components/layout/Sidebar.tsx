@@ -41,7 +41,7 @@ const CORE_STAGES = [
   { id: '03', name: '03 Competitor Research', shortName: 'Competitors', icon: Users },
   { id: '04', name: '04 Supplier & Economics', shortName: 'Economics', icon: Truck },
   { id: '05', name: '05 Offer Creation', shortName: 'Offer', icon: Tag },
-  { id: '06', name: '06 Creative & Storefront', shortName: 'Creative', icon: Film },
+  { id: '06', name: '06 Creative Studio', shortName: 'Creative', icon: Film },
 ];
 
 // Roadmap V2 Stages (Expansion modules)
@@ -96,6 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const getStageStatus = (stageId: string) => {
+    if (stageId === '06') return 'ready';
     if (!activeProduct) {
       if (stageId === '01') return 'ready';
       return 'locked';
@@ -110,7 +111,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (stageId === '03') return activeProduct.competitor_analysis ? 'completed' : activeProduct.validation ? 'ready' : 'locked';
     if (stageId === '04') return activeProduct.supplier_economics ? 'completed' : activeProduct.competitor_analysis ? 'ready' : 'locked';
     if (stageId === '05') return activeProduct.offer_package ? 'completed' : activeProduct.supplier_economics ? 'ready' : 'locked';
-    if (stageId === '06') return activeProduct.creative_pack ? 'completed' : activeProduct.offer_package ? 'ready' : 'locked';
     return 'locked';
   };
 

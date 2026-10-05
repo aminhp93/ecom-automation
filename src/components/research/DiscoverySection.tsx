@@ -127,10 +127,10 @@ export function DiscoverySection({ runs, categories, icon }: { runs: DiscoveryRu
       <div className="px-4 py-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-            {icon} Tìm sản phẩm mới
+            {icon} Ứng viên mới
           </h2>
           <p className="text-xs text-zinc-600 mt-1 max-w-2xl">
-            Mỗi thứ 2 quét 2 ngành (xoay vòng), loại SP trùng hoặc dính lọc cứng (pin, chất lỏng, dao, nặng, baby/pet, y tế), đưa top 5 vào pipeline. Lần
+            Mỗi thứ 2 quét 2 ngành (xoay vòng), loại SP trùng hoặc dính lọc cứng (pin, chất lỏng, dao, nặng, baby/pet, y tế), đề xuất tối đa 5 ứng viên có bằng chứng phù hợp, có thể không đề xuất ứng viên nào. Lần
             tới: <b className="text-zinc-900">{nextText}</b>.
           </p>
         </div>

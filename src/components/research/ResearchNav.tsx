@@ -4,21 +4,26 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, Compass } from 'lucide-react';
 
+// 3 tab chính: Tổng quan để định hướng → Sản phẩm để làm việc → Cơ sở đánh giá để tra cứu.
 const TABS = [
-  { href: '/research', label: 'Tổng quan' },
-  { href: '/research/discover', label: 'Tìm sản phẩm mới' },
-  { href: '/research/products', label: 'Đánh giá sản phẩm' },
-  { href: '/research/data', label: 'Chất lượng dữ liệu' },
-  { href: '/research/criteria', label: 'Bộ tiêu chí' },
-  { href: '/research/sessions', label: 'Phiên với anh Thanh' },
+  { href: '/research', label: 'Tổng quan', match: (p: string) => p === '/research' },
+  {
+    href: '/research/products',
+    label: 'Sản phẩm',
+    match: (p: string) => p.startsWith('/research/products') || p.startsWith('/research/p/') || p.startsWith('/research/discover'),
+  },
+  { href: '/research/criteria', label: 'Cơ sở đánh giá', match: (p: string) => BASIS_TABS.some((t) => p.startsWith(t.href)) },
+];
+
+// Tab con của "Cơ sở đánh giá" — dùng ở src/app/research/(co-so)/layout.tsx.
+export const BASIS_TABS = [
+  { href: '/research/criteria', label: 'Bộ tiêu chí', hint: 'Quy tắc đánh giá' },
+  { href: '/research/data', label: 'Bằng chứng & dữ liệu', hint: 'Nguồn, ngày cập nhật, phần thiếu' },
+  { href: '/research/sessions', label: 'Phiên với anh Thanh', hint: 'Kiến thức và lý do điều chỉnh cách đánh giá' },
 ];
 
 export function ResearchNav() {
   const pathname = usePathname();
-  const active = (href: string) =>
-    href === '/research' ? pathname === '/research'
-      : href === '/research/products' ? pathname.startsWith(href) || pathname.startsWith('/research/p/')
-      : pathname.startsWith(href);
   return (
     <header className="bg-white border-b border-zinc-200 sticky top-0 z-20">
       <div className="max-w-6xl mx-auto px-5 py-3 flex flex-wrap items-center gap-3">
@@ -33,9 +38,9 @@ export function ResearchNav() {
             <Link
               key={t.href}
               href={t.href}
-              aria-current={active(t.href) ? 'page' : undefined}
+              aria-current={t.match(pathname) ? 'page' : undefined}
               className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap ${
-                active(t.href) ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'
+                t.match(pathname) ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'
               }`}
             >
               {t.label}

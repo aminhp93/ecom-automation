@@ -1,5 +1,5 @@
 // Nhãn + định dạng dùng chung cho Market Research (an toàn cho cả client & server).
-import type { Decision, Readiness } from './db';
+import type { Decision, Readiness, ProductOverview } from './db';
 
 export const DECISION_LABEL: Record<Decision, string> = {
   chon_chinh: 'Chọn – SP chính',
@@ -85,3 +85,30 @@ export const MATCH_LABEL: Record<string, { label: string; cls: string }> = {
   no: { label: 'Khác SP', cls: 'text-rose-700' },
   unverified: { label: 'Chưa xác nhận', cls: 'text-zinc-400' },
 };
+
+// Nhóm quyết định tách biệt với giai đoạn công việc và lịch theo dõi.
+export type PipelineGroup = 'chon' | 'theo_doi' | 'loai';
+
+export const PIPELINE: { key: PipelineGroup; label: string; hint: string; cls: string }[] = [
+  { key: 'chon', label: 'Chọn', hint: 'Đã chọn, qua lọc cứng và đủ bằng chứng bắt buộc', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  { key: 'theo_doi', label: 'Theo dõi', hint: 'Đang nghiên cứu, cần bổ sung bằng chứng hoặc chờ quyết định', cls: 'bg-sky-50 text-sky-700 border-sky-200' },
+  { key: 'loai', label: 'Loại', hint: 'Đã quyết định không chọn hoặc rớt lọc cứng', cls: 'bg-rose-50 text-rose-700 border-rose-200' },
+];
+
+type GroupEvidence = Pick<ProductOverview, 'decision' | 'stage' | 'readiness' | 'passed_filters' | 'failed_filters' | 'missing_required' | 'unknown_filters' | 'decision_conflict'>;
+
+export function pipelineGroup(r: GroupEvidence): PipelineGroup {
+  if (r.decision === 'khong_chon' || r.stage === 'filtered_out' || r.readiness === 'rot_loc_cung' || r.failed_filters?.length) return 'loai';
+  if (r.decision && r.readiness === 'san_sang' && r.passed_filters === true && !r.decision_conflict &&
+    r.missing_required?.length === 0 && r.unknown_filters?.length === 0) return 'chon';
+  return 'theo_doi';
+}
+
+export function pipelineReason(r: GroupEvidence): string {
+  const group = pipelineGroup(r);
+  if (group === 'loai') return r.decision === 'khong_chon' ? 'Đã quyết định không chọn' : 'Không đạt lọc cứng';
+  if (group === 'chon') return 'Đã chọn và đủ bằng chứng nghiên cứu';
+  if (r.decision) return 'Quyết định chọn cần rà lại bằng chứng';
+  if (r.readiness === 'san_sang') return 'Đủ bằng chứng, chờ quyết định chọn';
+  return r.stage === 'monitoring' ? 'Đang theo dõi số liệu' : 'Đang nghiên cứu · cần bổ sung bằng chứng';
+}

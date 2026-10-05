@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
-import type { ProductOverview, Readiness } from '@/lib/research/db';
+import type { ProductOverview } from '@/lib/research/db';
 import {
-  DECISION_CLASS, DECISION_LABEL, READINESS, STAGE_LABEL, fmtNum, fmtPct, fmtScore, scoreClass,
+  DECISION_CLASS, DECISION_LABEL, PIPELINE, READINESS_LABEL, STAGE_LABEL, fmtNum, fmtPct, fmtScore, pipelineGroup, pipelineReason, scoreClass,
+  type PipelineGroup,
 } from '@/lib/research/labels';
 
-type DecisionFilter = 'all' | 'chosen' | 'khong_chon' | 'undecided' | 'conflict';
+type DecisionFilter = 'all' | PipelineGroup;
 
 /** Điểm tiềm năng đã nhân độ đầy đủ bằng chứng — chỉ để sắp xếp trong nhóm, không hiển thị như một điểm mới. */
 const sortKey = (r: ProductOverview) => (r.score ?? 0) * (r.completeness ?? 0);
@@ -25,15 +26,12 @@ export function ProductRankingTable({ rows, names }: { rows: ProductOverview[]; 
   const visible = rows.filter((r) => {
     if (text && !`${r.name_vi} ${r.keyword ?? ''} ${r.slug}`.toLowerCase().includes(text.toLowerCase())) return false;
     if (category !== 'all' && r.category !== category) return false;
-    if (decision === 'chosen') return r.decision !== null && r.decision !== 'khong_chon';
-    if (decision === 'khong_chon') return r.decision === 'khong_chon';
-    if (decision === 'undecided') return r.decision === null;
-    if (decision === 'conflict') return !!r.decision_conflict;
+    if (decision !== 'all') return pipelineGroup(r) === decision;
     return true;
   });
-  const groups = READINESS.map((g) => ({
+  const groups = PIPELINE.map((g) => ({
     ...g,
-    rows: visible.filter((r) => (r.readiness ?? 'can_xac_minh') === g.key).sort((a, b) => sortKey(b) - sortKey(a)),
+    rows: visible.filter((r) => pipelineGroup(r) === g.key).sort((a, b) => sortKey(b) - sortKey(a)),
   }));
 
   return (
@@ -46,11 +44,8 @@ export function ProductRankingTable({ rows, names }: { rows: ProductOverview[]; 
           className="px-2.5 py-1.5 border border-zinc-200 rounded-md w-48 bg-white focus:outline-none focus:ring-1 focus:ring-zinc-400"
         />
         <select value={decision} onChange={(e) => setDecision(e.target.value as DecisionFilter)} className="px-2 py-1.5 border border-zinc-200 rounded-md bg-white">
-          <option value="all">Mọi quyết định</option>
-          <option value="chosen">Đang chọn</option>
-          <option value="conflict">Quyết định mâu thuẫn</option>
-          <option value="khong_chon">Không chọn</option>
-          <option value="undecided">Chưa quyết</option>
+          <option value="all">Cả 3 nhóm</option>
+          {PIPELINE.map(g => <option key={g.key} value={g.key}>{g.label}</option>)}
         </select>
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="px-2 py-1.5 border border-zinc-200 rounded-md bg-white">
           <option value="all">Mọi ngành</option>
@@ -62,8 +57,12 @@ export function ProductRankingTable({ rows, names }: { rows: ProductOverview[]; 
       </div>
 
       {groups.map((g) => (
-        <section key={g.key} className="bg-white border border-zinc-200 rounded-lg">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-zinc-100">
+        <section key={g.key} id={g.key} className="bg-white border border-zinc-200 rounded-lg scroll-mt-16">
+          {/* Keep previously shared section links working. */}
+          {g.key === 'chon' && <span id="de_xuat_thu" className="block scroll-mt-16" />}
+          {g.key === 'theo_doi' && <span id="dang_nghien_cuu" className="block scroll-mt-16" />}
+          {g.key === 'loai' && <span id="da_loai" className="block scroll-mt-16" />}
+          <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-100">
             <span className={`text-[11px] px-1.5 py-0.5 rounded border ${g.cls}`}>{g.label}</span>
             <span className="text-xs text-zinc-500">{g.hint}</span>
             <span className="ml-auto text-xs text-zinc-500">{g.rows.length} SP</span>
@@ -71,7 +70,7 @@ export function ProductRankingTable({ rows, names }: { rows: ProductOverview[]; 
           {g.rows.length === 0 ? (
             <p className="px-3 py-3 text-xs text-zinc-400">Không có SP.</p>
           ) : (
-            <GroupTable rows={g.rows} readiness={g.key} names={names} />
+            <GroupTable rows={g.rows} group={g.key} names={names} />
           )}
         </section>
       ))}
@@ -79,8 +78,8 @@ export function ProductRankingTable({ rows, names }: { rows: ProductOverview[]; 
   );
 }
 
-function GroupTable({ rows, readiness, names }: { rows: ProductOverview[]; readiness: Readiness; names: Record<string, string> }) {
-  const [showAll, setShowAll] = useState(readiness !== 'rot_loc_cung');
+function GroupTable({ rows, group, names }: { rows: ProductOverview[]; group: PipelineGroup; names: Record<string, string> }) {
+  const [showAll, setShowAll] = useState(group !== 'loai');
   const list = showAll ? rows : rows.slice(0, 8);
   return (
     <div className="overflow-x-auto">
@@ -90,7 +89,7 @@ function GroupTable({ rows, readiness, names }: { rows: ProductOverview[]; readi
             <th className="px-3 py-2 font-medium">Sản phẩm</th>
             <th className="px-3 py-2 font-medium text-right" title="Điểm tiềm năng theo tiêu chí hiện hành — chỉ tính trên tiêu chí có dữ liệu">Điểm tiềm năng</th>
             <th className="px-3 py-2 font-medium text-right" title="Tỷ lệ trọng số tiêu chí có dữ liệu">Dữ liệu</th>
-            <th className="px-3 py-2 font-medium">{readiness === 'rot_loc_cung' ? 'Rớt' : 'Còn thiếu'}</th>
+            <th className="px-3 py-2 font-medium">{group === 'loai' ? 'Rớt / còn thiếu' : 'Còn thiếu'}</th>
             <th className="px-3 py-2 font-medium" title="Anh Thanh: mỗi khách một size/mẫu → sàn không bán được">Rào cản sàn</th>
             <th className="px-3 py-2 font-medium text-right">AU search</th>
             <th className="px-3 py-2 font-medium text-right" title="Số brand khác nhau (theo website) đã xác nhận bán đúng SP, ≥5 ad đang chạy ở AU">Brand AU</th>
@@ -100,12 +99,17 @@ function GroupTable({ rows, readiness, names }: { rows: ProductOverview[]; readi
         </thead>
         <tbody>
           {list.map((r) => {
-            const gaps = readiness === 'rot_loc_cung' ? r.failed_filters ?? [] : [...(r.unknown_filters ?? []), ...(r.missing_required ?? [])];
+            const failed = r.readiness === 'rot_loc_cung' || !!r.failed_filters?.length;
+            const gaps = failed ? r.failed_filters ?? [] : [...(r.unknown_filters ?? []), ...(r.missing_required ?? [])];
             return (
               <tr key={r.product_id} className="border-t border-zinc-100 hover:bg-zinc-50 align-top">
                 <td className="px-3 py-2 max-w-xs">
                   <Link href={`/research/p/${r.slug}`} className="font-medium text-zinc-900 hover:underline">{r.name_vi}</Link>
-                  <div className="text-zinc-500">{r.category} · {STAGE_LABEL[r.stage] ?? r.stage}</div>
+                  <div className="text-zinc-500">
+                    {r.category} · {STAGE_LABEL[r.stage] ?? r.stage}
+                    {r.readiness && <> · {READINESS_LABEL[r.readiness]}</>}
+                  </div>
+                  <p className="mt-1 text-[11px] text-zinc-600">{pipelineReason(r)}</p>
                 </td>
                 <td className={`px-3 py-2 text-right font-semibold tabular-nums ${scoreClass(r.score)}`}>{fmtScore(r.score)}</td>
                 <td className={`px-3 py-2 text-right tabular-nums ${(r.completeness ?? 0) < 0.7 ? 'text-amber-700' : 'text-zinc-600'}`}>
@@ -113,7 +117,7 @@ function GroupTable({ rows, readiness, names }: { rows: ProductOverview[]; readi
                 </td>
                 <td className="px-3 py-2 max-w-[220px]">
                   {gaps.length === 0 ? <span className="text-zinc-400">—</span> : (
-                    <span className={readiness === 'rot_loc_cung' ? 'text-rose-700' : 'text-amber-800'}>{gaps.map((k) => names[k] ?? k).join(' · ')}</span>
+                    <span className={failed ? 'text-rose-700' : 'text-amber-800'}>{gaps.map((k) => names[k] ?? k).join(' · ')}</span>
                   )}
                 </td>
                 <td className="px-3 py-2">{r.marketplace_barrier ?? <span className="text-zinc-400">chưa đánh giá</span>}</td>

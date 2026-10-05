@@ -127,7 +127,7 @@ export const Stage05OfferView: React.FC<Stage05OfferViewProps> = ({
               onClick={onProceedToNext}
               className="px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-900 font-medium text-xs flex items-center gap-1.5 hover:bg-zinc-200 border border-zinc-200"
             >
-              <span>Tiếp Tục Stage 06 (Creative & Store)</span>
+              <span>Tiếp tục Bước 6 (Creative Studio)</span>
               <ArrowRight className="w-3 h-3" />
             </button>
           )}
