@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { advertiserCounts, latestPer } from '@/lib/research/display';
 import type { ProductDetail, ScoreRow } from '@/lib/research/db';
-import { DECISION_CLASS, DECISION_LABEL, READINESS_CLASS, READINESS_LABEL, fmtNum, fmtScore, scoreClass } from '@/lib/research/labels';
+import { DECISION_CLASS, DECISION_LABEL, READINESS_CLASS, READINESS_LABEL, fmtNum, fmtScore, scoreClass, SHOW_COMPUTED_SCORE } from '@/lib/research/labels';
 
 const ACTION_LABEL: Record<string, string> = { dung_lai: 'Dùng lại', lam_moi: 'Làm mới', moi: 'Angle mới', tranh: 'Tránh' };
 const ACTION_CLS: Record<string, string> = {
@@ -77,9 +77,11 @@ export function ProductOverviewTab({ d, current, tabHref }: { d: ProductDetail; 
         <Tile label="Quyết định" sub={o.readiness ? <span className={`px-1 rounded border ${READINESS_CLASS[o.readiness]}`}>{READINESS_LABEL[o.readiness]}</span> : null}>
           {o.decision ? <span className={`text-sm px-1.5 py-0.5 rounded border ${DECISION_CLASS[o.decision]}`}>{DECISION_LABEL[o.decision]}</span> : 'Chưa quyết'}
         </Tile>
-        <Tile label={`Điểm ${current?.version ?? ''}`} sub={current ? `dữ liệu ${Math.round((current.completeness ?? 0) * 100)}%` : null}>
-          <span className={scoreClass(current?.total)}>{fmtScore(current?.total)}</span>
-        </Tile>
+        {SHOW_COMPUTED_SCORE && (
+          <Tile label={`Điểm ${current?.version ?? ''}`} sub={current ? `dữ liệu ${Math.round((current.completeness ?? 0) * 100)}%` : null}>
+            <span className={scoreClass(current?.total)}>{fmtScore(current?.total)}</span>
+          </Tile>
+        )}
 <Tile label="Đánh giá nghiên cứu AU" sub="Nhận định định tính · chưa phải kết quả thử bán">
           {winAU ? <span className={VERDICT_CLS[winAU.verdict]}>{VERDICT_LABEL[winAU.verdict] ?? winAU.verdict}</span> : '—'}
         </Tile>

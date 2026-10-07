@@ -365,6 +365,22 @@ export interface DiscoveryCategory {
   last_run_on: string | null;
 }
 
+/** Dữ liệu chi tiết để xem ứng viên trước khi chọn (cột `detail`, do Claude ghi khi `discover`). Mọi mục đều là ước tính/mẫu nên có thể thiếu. */
+export interface CandidateDetail {
+  captured_on?: string;
+  summary?: string;
+  search_keywords?: string[];
+  amazon_listings?: { asin: string; brand?: string; title: string; price?: number; rating?: number; ratings?: number; weight?: string; seller?: string; fulfillment?: string; image?: string; badge?: string }[];
+  competitors?: { name: string; page_id?: string; kind?: string; ads?: number; longest_days?: number; domains?: string[] }[];
+  meta?: { active_ads?: number; sample?: number; over60?: number; method?: string };
+  tiktok_us?: { name: string; price?: string; sold_30d?: number; gmv_30d?: string; growth?: string; image?: string }[];
+  trends?: { keyword?: string; market?: string; series?: number[]; note?: string };
+  keywords?: { keyword: string; searches?: number; purchases?: number; purchase_rate?: number; avg_price?: number; products?: number; bid?: number }[];
+  opportunities?: string[];
+  risks?: string[];
+  to_verify?: string[];
+}
+
 export interface DiscoveryCandidate {
   id: number;
   run_id: number | null;
@@ -379,7 +395,13 @@ export interface DiscoveryCandidate {
   priority: number | null;
   product_id: number | null;
   note: string | null;
+  detail: CandidateDetail | null;
   products: { slug: string; name_vi: string } | null;
+}
+
+export async function getCandidate(id: number): Promise<DiscoveryCandidate | null> {
+  const rows = await get<DiscoveryCandidate[]>(`discovery_candidates?select=*,products(slug,name_vi)&id=eq.${id}`);
+  return rows[0] ?? null;
 }
 
 export interface DiscoveryRun {

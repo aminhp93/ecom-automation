@@ -27,16 +27,22 @@ export default async function CriteriaPage() {
         const active = rows.filter((c) => c.status !== 'retired');
         const retired = rows.filter((c) => c.status === 'retired');
         const totalWeight = active.filter((c) => c.kind === 'score').reduce((s, c) => s + Number(c.weight), 0);
-        return (
-          <section key={v.version} className={`bg-white border rounded-lg ${v.is_current ? 'border-zinc-900' : 'border-zinc-200'}`}>
-            <div className="px-4 py-3 border-b border-zinc-100">
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-semibold">{v.version}</h2>
-                {v.is_current && <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 text-white">đang dùng</span>}
-                <span className="text-xs text-zinc-500">{v.created_on}</span>
-              </div>
-              <p className="text-xs text-zinc-600 mt-1">{v.summary}</p>
+        const header = (
+          <>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">{v.version}</h2>
+              {v.is_current ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-900 text-white">đang dùng</span>
+              ) : (
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-500">không dùng nữa</span>
+              )}
+              <span className="text-xs text-zinc-500">{v.created_on}</span>
+              {!v.is_current && <span className="text-xs text-zinc-400">· {active.length} tiêu chí · bấm để mở</span>}
             </div>
+            <p className="text-xs text-zinc-600 mt-1">{v.summary}</p>
+          </>
+        );
+        const body = (
             <div className="p-4 overflow-x-auto">
               <table className="w-full text-xs">
                 <thead>
@@ -78,7 +84,18 @@ export default async function CriteriaPage() {
                 </div>
               )}
             </div>
+        );
+        // Phiên bản cũ mặc định thu gọn; bấm tiêu đề để xem lại.
+        return v.is_current ? (
+          <section key={v.version} className="bg-white border border-zinc-900 rounded-lg">
+            <div className="px-4 py-3 border-b border-zinc-100">{header}</div>
+            {body}
           </section>
+        ) : (
+          <details key={v.version} className="bg-white border border-zinc-200 rounded-lg group">
+            <summary className="px-4 py-3 cursor-pointer select-none hover:bg-zinc-50 group-open:border-b group-open:border-zinc-100">{header}</summary>
+            {body}
+          </details>
         );
       })}
     </>

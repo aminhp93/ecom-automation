@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ClipboardList, Play, Search, Sparkles } from 'lucide-react';
 import { getCriteria, getCriteriaVersions, getDiscovery, getOverview, type ProductOverview } from '@/lib/research/db';
-import { PIPELINE, pipelineGroup } from '@/lib/research/labels';
+import { PIPELINE, pipelineGroup, priorityKey } from '@/lib/research/labels';
 import { CopyCommand } from '@/components/research/CopyCommand';
 
 function TodoGroup({ icon, title, hint, items, collapsed = false }: {
@@ -42,7 +42,7 @@ export default async function ResearchOverviewPage() {
   const gapText = (r: ProductOverview) =>
     [...(r.unknown_filters ?? []), ...(r.missing_required ?? [])].map((k) => names[k] ?? k).join(' · ');
 
-  const priority = (r: ProductOverview) => (r.score ?? 0) * (r.completeness ?? 0);
+  const priority = priorityKey;
   const action = (r: ProductOverview) => {
     const gaps = gapText(r);
     if (r.decision_conflict || r.readiness !== 'san_sang' || gaps) return {
@@ -78,7 +78,6 @@ export default async function ResearchOverviewPage() {
     .filter((c) => c.status === 'de_xuat' || c.status === 'da_them')
     .sort((a, b) => b.found_on.localeCompare(a.found_on) || (b.priority ?? -1) - (a.priority ?? -1))
     .slice(0, 5);
-  const nextCategories = discovery.categories.filter((c) => c.active).slice(0, 2).map((c) => c.category).join(' + ');
 
   const tiles = PIPELINE.map((g) => ({ ...g, n: rows.filter((r) => pipelineGroup(r) === g.key).length }));
 
@@ -86,12 +85,12 @@ export default async function ResearchOverviewPage() {
     <section>
       <h1 className="text-xl font-semibold text-zinc-900">Tổng quan nghiên cứu thị trường</h1>
       <p className="text-sm text-zinc-600 mt-2"><b>Dùng để:</b> Chọn sản phẩm đáng thử tại AU, với bằng chứng, offer và bài toán chi phí rõ ràng.</p>
-      <p className="text-sm text-zinc-600 mt-1"><b>Bắt đầu:</b> Làm “Việc cần làm tiếp” bên dưới; cần thêm ý tưởng thì xem “Ứng viên đáng xem”.</p>
+      <p className="text-sm text-zinc-600 mt-1"><b>Bắt đầu:</b> Làm “Việc cần làm tiếp” bên dưới; cần thêm ý tưởng thì xem “Sản phẩm tiềm năng”.</p>
     </section>
 
     <section className="grid grid-cols-3 gap-2" aria-label="Nhóm sản phẩm">
       {tiles.map((t) => (
-        <Link key={t.key} href={`/research/products#${t.key}`} title={t.hint} className={`border rounded-lg p-3 hover:opacity-80 ${t.cls}`}>
+        <Link key={t.key} href={t.key === 'chon' ? '/research/products' : `/research/products?nhom=${t.key === 'theo_doi' ? 'theo-doi' : t.key}`} title={t.hint} className={`border rounded-lg p-3 hover:opacity-80 ${t.cls}`}>
           <div className="text-xs">{t.label}</div>
           <div className="text-2xl font-semibold tabular-nums mt-0.5">{t.n}</div>
           <p className="text-[11px] mt-2">{t.hint}</p>
@@ -111,9 +110,9 @@ export default async function ResearchOverviewPage() {
     <section className="bg-white border border-zinc-200 rounded-lg">
       <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-zinc-100">
         <Sparkles className="w-4 h-4 text-violet-600" />
-        <h2 className="text-xs font-semibold text-zinc-900">Ứng viên đáng xem</h2>
-        <span className="text-[11px] text-zinc-500">Từ lần tìm SP mới gần nhất · lần tới: {nextCategories || '—'}</span>
-        <Link href="/research/products#tim-sp-moi" className="ml-auto text-xs text-sky-700 underline">Xem tất cả ứng viên →</Link>
+        <h2 className="text-xs font-semibold text-zinc-900">Sản phẩm tiềm năng</h2>
+        <span className="text-[11px] text-zinc-500">Từ các lần tìm SP mới gần nhất · mỗi thứ Hai quét tất cả ngành</span>
+        <Link href="/research/discover" className="ml-auto text-xs text-sky-700 underline">Xem tất cả sản phẩm tiềm năng →</Link>
       </div>
       {candidates.length === 0 ? (
         <p className="px-3 py-2.5 text-xs text-zinc-500">Chưa có ứng viên — lần quét đầu tự chạy sáng thứ 2.</p>
@@ -124,7 +123,7 @@ export default async function ResearchOverviewPage() {
               {c.products ? (
                 <Link href={`/research/p/${c.products.slug}`} className="font-medium text-zinc-900 hover:underline">{c.products.name_vi}</Link>
               ) : (
-                <span className="font-medium text-zinc-900">{c.name_vi ?? c.keyword}</span>
+                <Link href={`/research/discover/${c.id}`} className="font-medium text-zinc-900 hover:underline">{c.name_vi ?? c.keyword}</Link>
               )}
               <span className="text-zinc-500 flex-1 min-w-[200px]">{c.category} · {c.screen?.reason ?? c.keyword}</span>
             </li>
@@ -146,7 +145,7 @@ export default async function ResearchOverviewPage() {
 
     <p className="text-xs text-zinc-500">
       <b>Tổng quan</b> để định hướng → <Link href="/research/products" className="underline">Sản phẩm</Link> để làm việc →{' '}
-      <Link href="/research/criteria" className="underline">Cơ sở đánh giá</Link> để tra cứu. Điểm cao không thay thế bằng chứng; “đã thêm vào danh sách” chưa có nghĩa là “đã chọn để bán”.
+      <Link href="/research/criteria" className="underline">Cơ sở đánh giá</Link> để tra cứu. Mức sẵn sàng và bằng chứng quan trọng hơn mọi con số tính toán; “đã thêm vào danh sách” chưa có nghĩa là “đã chọn để bán”.
     </p>
   </>;
 }

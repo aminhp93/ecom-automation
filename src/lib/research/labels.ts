@@ -46,6 +46,13 @@ export const fmtMoney = (v: number | null | undefined, prefix = '$') =>
   v === null || v === undefined ? '—' : `${prefix}${Number(v).toFixed(2)}`;
 export const fmtScore = (v: number | null | undefined) => (v === null || v === undefined ? '—' : Number(v).toFixed(1));
 
+/**
+ * Tạm ẩn "Điểm tiềm năng" và "Dữ liệu" (độ phủ trọng số). Công thức chưa được kiểm chứng: trọng số và ngưỡng là ước lượng,
+ * tiêu chí thiếu dữ liệu bị bỏ khỏi mẫu số nên điểm có thể cao dù mới có 3-4 tiêu chí, và chưa có kết quả bán thật để hiệu chỉnh.
+ * Đặt lại `true` khi đã hiệu chỉnh. Mức sẵn sàng, lọc cứng và các số liệu thô vẫn hiển thị.
+ */
+export const SHOW_COMPUTED_SCORE = false;
+
 export const scoreClass = (v: number | null | undefined) =>
   v === null || v === undefined
     ? 'text-zinc-400'
@@ -112,3 +119,11 @@ export function pipelineReason(r: GroupEvidence): string {
   if (r.readiness === 'san_sang') return 'Đủ bằng chứng, chờ quyết định chọn';
   return r.stage === 'monitoring' ? 'Đang theo dõi số liệu' : 'Đang nghiên cứu · cần bổ sung bằng chứng';
 }
+
+const READINESS_RANK: Record<string, number> = { san_sang: 3, can_xac_minh: 2, rot_loc_cung: 1 };
+
+/** Khoá sắp xếp "ưu tiên làm trước": nếu ẩn điểm thì xếp theo mức sẵn sàng, rồi số brand AU đã xác minh, rồi search AU (đều là số liệu hoặc quy tắc, không phải điểm). */
+export const priorityKey = (r: { score: number | null; completeness: number | null; readiness: string | null; ad_signal_brands: number | null; au_searches: number | null }) =>
+  SHOW_COMPUTED_SCORE
+    ? (r.score ?? 0) * (r.completeness ?? 0)
+    : (READINESS_RANK[r.readiness ?? ''] ?? 0) * 1e9 + (r.ad_signal_brands ?? 0) * 1e6 + Math.min(r.au_searches ?? 0, 999_999);

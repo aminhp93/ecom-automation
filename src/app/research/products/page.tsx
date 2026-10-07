@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
 import { getCriteria, getCriteriaVersions, getDiscovery, getOverview } from '@/lib/research/db';
-import { PIPELINE, pipelineGroup } from '@/lib/research/labels';
+import { SHOW_COMPUTED_SCORE, pipelineGroup, type PipelineGroup } from '@/lib/research/labels';
 import { ProductRankingTable } from '@/components/research/ProductRankingTable';
 import { CopyCommand } from '@/components/research/CopyCommand';
-import { DiscoverySection } from '@/components/research/DiscoverySection';
+import { ProductTabs, groupCounts } from '@/components/research/ProductTabs';
 
-export default async function ProductsPage() {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | string[] | undefined }> }) {
+  const sp = await searchParams;
+  const group: PipelineGroup = sp.nhom === 'theo-doi' ? 'theo_doi' : sp.nhom === 'loai' ? 'loai' : 'chon';
   const [rows, versions, discovery] = await Promise.all([getOverview(), getCriteriaVersions(), getDiscovery()]);
   const current = versions.find((v) => v.is_current);
   const criteria = current ? await getCriteria(current.version) : [];
@@ -14,9 +15,6 @@ export default async function ProductsPage() {
 
   // Ứng viên còn chờ xem (chưa thêm vào pipeline, chưa bị loại).
   const openCandidates = discovery.runs.flatMap((r) => r.discovery_candidates).filter((c) => c.status === 'de_xuat' || c.status === 'moi').length;
-  const flow = [
-    ...PIPELINE.map((g) => ({ href: `#${g.key}`, label: g.label, n: rows.filter((r) => pipelineGroup(r) === g.key).length })),
-  ];
 
   return (
     <>
@@ -27,8 +25,12 @@ export default async function ProductsPage() {
             Đi từ ý tưởng đến quyết định thử. Mở tên sản phẩm để xem hồ sơ, bằng chứng và phần còn thiếu.
           </p>
           <p className="text-xs text-zinc-500 mt-1 max-w-2xl">
-            Điểm tiềm năng tính theo <Link href="/research/criteria" className="underline">bộ tiêu chí {current?.version}</Link> — điểm cao nhưng thiếu bằng
-            chứng vẫn ở “Theo dõi”. “Đang nghiên cứu” là công việc trong nhóm Theo dõi, không phải nhóm riêng.
+            {SHOW_COMPUTED_SCORE ? (
+              <>Điểm tiềm năng tính theo <Link href="/research/criteria" className="underline">bộ tiêu chí {current?.version}</Link> — điểm cao nhưng thiếu bằng chứng vẫn ở “Theo dõi”.</>
+            ) : (
+              <>Điểm tiềm năng và độ phủ dữ liệu tạm ẩn vì công thức chưa được kiểm chứng. Sản phẩm xếp theo mức sẵn sàng theo <Link href="/research/criteria" className="underline">bộ tiêu chí {current?.version}</Link>, rồi số brand AU đã xác minh, rồi lượt search AU.</>
+            )}{' '}
+            “Đang nghiên cứu” là công việc trong nhóm Theo dõi, không phải nhóm riêng.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -37,20 +39,9 @@ export default async function ProductsPage() {
         </div>
       </section>
 
-      <nav className="flex flex-wrap items-center gap-1 text-xs" aria-label="Nhóm sản phẩm">
-        {flow.map((f) => (
-          <span key={f.href} className="flex items-center gap-1">
-            <a href={f.href} className="px-2 py-1 rounded-md bg-white border border-zinc-200 hover:border-zinc-400 text-zinc-700">
-              {f.label} <b className="tabular-nums text-zinc-900">{f.n}</b>
-            </a>
-          </span>
-        ))}
-        <a href="#tim-sp-moi" className="ml-auto px-2 py-1 text-violet-700 underline">Tìm sản phẩm mới ({openCandidates} ứng viên)</a>
-      </nav>
+      <ProductTabs active={group} counts={groupCounts(rows, openCandidates)} />
 
-      <DiscoverySection runs={discovery.runs} categories={discovery.categories} icon={<Sparkles className="w-4 h-4 text-violet-600" />} />
-
-      <ProductRankingTable rows={rows} names={names} />
+      <ProductRankingTable rows={rows.filter((r) => pipelineGroup(r) === group)} names={names} group={group} />
     </>
   );
 }

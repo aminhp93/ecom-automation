@@ -15,6 +15,7 @@ import {
   fmtPct,
   fmtScore,
   scoreClass,
+  SHOW_COMPUTED_SCORE,
 } from '@/lib/research/labels';
 import { Markdown } from '@/components/research/Markdown';
 import { Sparkline } from '@/components/research/Sparkline';
@@ -84,19 +85,25 @@ function ScoreBreakdown({ score, criteria }: { score: ScoreRow; criteria: Criter
                               maximumFractionDigits: 3,
                             })}
                       </td>
-                      <td className={`${TD} w-32`}>
-                        {s === null ? (
-                          <span className="text-zinc-400">thiếu</span>
-                        ) : (
-                          <div className="h-1.5 bg-zinc-100 rounded">
-                            <div
-                              className={`h-1.5 rounded ${s >= 75 ? 'bg-emerald-500' : s >= 40 ? 'bg-amber-400' : 'bg-rose-400'}`}
-                              style={{ width: `${s}%` }}
-                            />
-                          </div>
-                        )}
-                      </td>
-                      <td className={`${TD} text-right tabular-nums w-20`}>{s === null ? '' : `${s.toFixed(0)} × ${c.weight}`}</td>
+                      {SHOW_COMPUTED_SCORE ? (
+                        <>
+                          <td className={`${TD} w-32`}>
+                            {s === null ? (
+                              <span className="text-zinc-400">thiếu</span>
+                            ) : (
+                              <div className="h-1.5 bg-zinc-100 rounded">
+                                <div
+                                  className={`h-1.5 rounded ${s >= 75 ? 'bg-emerald-500' : s >= 40 ? 'bg-amber-400' : 'bg-rose-400'}`}
+                                  style={{ width: `${s}%` }}
+                                />
+                              </div>
+                            )}
+                          </td>
+                          <td className={`${TD} text-right tabular-nums w-20`}>{s === null ? '' : `${s.toFixed(0)} × ${c.weight}`}</td>
+                        </>
+                      ) : (
+                        <td className={`${TD} text-right text-zinc-400`} colSpan={2}>{s === null ? 'thiếu dữ liệu' : ''}</td>
+                      )}
                     </tr>
                   );
                 })}
@@ -137,7 +144,7 @@ export default async function ProductDossierPage({
     { key: 'win', label: 'Cơ hội & rủi ro' },
     { key: 'dossier', label: dossier ? `Hồ sơ v${dossier.version}` : 'Hồ sơ' },
     { key: 'market', label: 'Số liệu thị trường' },
-    { key: 'score', label: 'Điểm & kiểm tra' },
+    { key: 'score', label: SHOW_COMPUTED_SCORE ? 'Điểm & kiểm tra' : 'Kiểm tra & số liệu' },
   ];
   const latestAz = markets.flatMap((m) =>
     d.keywords.map((k) => d.amazon.find((a) => a.market === m && a.keyword === k.keyword)).filter(Boolean),
@@ -209,7 +216,7 @@ export default async function ProductDossierPage({
           )}
         </div>
         <div className="flex gap-4 text-right">
-          {latestByVersion
+          {SHOW_COMPUTED_SCORE && latestByVersion
             .filter((s) => s === current)
             .map((s) => (
               <div
@@ -450,7 +457,7 @@ export default async function ProductDossierPage({
               <div className="space-y-4 min-w-0">
                 {current && (
                   <Card
-                    title={`Điểm theo tiêu chí ${current.version}`}
+                    title={SHOW_COMPUTED_SCORE ? `Điểm theo tiêu chí ${current.version}` : `Số liệu và kiểm tra theo tiêu chí ${current.version}`}
                     right={
                       <Link href="/research/criteria" className="text-[11px] text-zinc-500 underline">
                         xem bộ tiêu chí

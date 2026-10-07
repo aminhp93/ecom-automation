@@ -29,6 +29,26 @@ const FILTER_LABEL: Record<string, string> = { battery: 'Có pin', liquid: 'Ch�
 const fmt = (v: unknown) =>
   typeof v === 'number' ? v.toLocaleString('vi-VN') : typeof v === 'string' ? v : JSON.stringify(v);
 
+const fmtDM = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
+
+/** Gom các lần quét theo tuần (thứ Hai là ngày đầu tuần), tuần mới nhất trước. `run_on` là YYYY-MM-DD nên tính theo UTC để không lệch ngày. */
+function groupByWeek(runs: DiscoveryRun[]) {
+  const map = new Map<string, DiscoveryRun[]>();
+  for (const r of runs) {
+    const d = new Date(`${r.run_on}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    const start = d.toISOString().slice(0, 10);
+    map.set(start, [...(map.get(start) ?? []), r]);
+  }
+  return [...map.entries()]
+    .sort((a, b) => b[0].localeCompare(a[0]))
+    .map(([start, list]) => {
+      const e = new Date(`${start}T00:00:00Z`);
+      e.setUTCDate(e.getUTCDate() + 6);
+      return { start, end: e.toISOString().slice(0, 10), runs: list };
+    });
+}
+
 const daysAgo = (d: string | null) => (d ? Math.round((Date.now() - new Date(d).getTime()) / 86_400_000) : null);
 
 function CandidateRow({ c }: { c: DiscoveryCandidate }) {
@@ -40,11 +60,14 @@ function CandidateRow({ c }: { c: DiscoveryCandidate }) {
   return (
     <tr className="border-t border-zinc-100 align-top">
       <td className="px-3 py-2">
-        <div className="font-medium text-zinc-900">{c.name_vi ?? c.keyword}</div>
+        <Link href={`/research/discover/${c.id}`} className="font-medium text-zinc-900 hover:underline">
+          {c.name_vi ?? c.keyword}
+        </Link>
         <div className="text-[11px] text-zinc-500">
           {c.keyword}
           {c.category ? ` · ${c.category}` : ''}
         </div>
+        {c.detail && <div className="text-[11px] text-sky-700 mt-0.5">Có ảnh, đối thủ, listing</div>}
       </td>
       <td className="px-3 py-2">
         <span className={`inline-block text-[11px] px-1.5 py-0.5 rounded border whitespace-nowrap ${s.cls}`}>{s.label}</span>
@@ -118,20 +141,24 @@ function RunBlock({ r }: { r: DiscoveryRun }) {
 
 /** Khối "Tìm sản phẩm mới" trong trang Sản phẩm: lần quét mới nhất + ngành xoay vòng + các lần trước. */
 export function DiscoverySection({ runs, categories, icon }: { runs: DiscoveryRun[]; categories: DiscoveryCategory[]; icon: React.ReactNode }) {
-  const next = categories.filter((c) => c.active).slice(0, 2);
-  const nextText = next.map((c) => c.category).join(' + ') || '—';
+  const activeCount = categories.filter((c) => c.active).length;
+  // Chỉ hiện lần quét mới nhất; các lần cũ ẩn trong một mục thu gọn, xếp theo tuần.
   const [latest, ...older] = runs;
+  const weeks = groupByWeek(older);
+  const nextMonday = new Date();
+  nextMonday.setDate(nextMonday.getDate() + (((8 - nextMonday.getDay()) % 7) || 7));
+  const nextText = `thứ Hai ${String(nextMonday.getDate()).padStart(2, '0')}/${String(nextMonday.getMonth() + 1).padStart(2, '0')}`;
 
   return (
     <section id="tim-sp-moi" className="bg-white border border-zinc-200 rounded-lg scroll-mt-16">
       <div className="px-4 py-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
-            {icon} Ứng viên mới
+            {icon} Sản phẩm tiềm năng
           </h2>
           <p className="text-xs text-zinc-600 mt-1 max-w-2xl">
-            Mỗi thứ 2 quét 2 ngành (xoay vòng), loại SP trùng hoặc dính lọc cứng (pin, chất lỏng, dao, nặng, baby/pet, y tế), đề xuất tối đa 5 ứng viên có bằng chứng phù hợp, có thể không đề xuất ứng viên nào. Lần
-            tới: <b className="text-zinc-900">{nextText}</b>.
+            Mỗi thứ 2 quét tất cả {activeCount} ngành đang theo dõi trong một lần, loại SP trùng hoặc dính lọc cứng (pin, chất lỏng, dao, nặng, baby/pet, y tế), đề xuất tối đa 5 ứng viên có bằng chứng phù hợp, có thể không đề xuất ứng viên nào. Lần
+            quét tự động tới: <b className="text-zinc-900">{nextText}</b>.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -146,15 +173,26 @@ export function DiscoverySection({ runs, categories, icon }: { runs: DiscoveryRu
         <RunBlock r={latest} />
       ) : (
         <p className="px-4 py-2.5 border-t border-zinc-100 text-xs text-zinc-500">
-          Chưa quét lần nào — lần đầu sẽ quét <b>{nextText}</b> (tự chạy sáng thứ 2, hoặc copy lệnh ở trên dán vào Claude).
+          Chưa quét lần nào — lần đầu sẽ quét tất cả ngành vào <b>{nextText}</b> (tự chạy sáng thứ 2, hoặc copy lệnh ở trên dán vào Claude).
         </p>
       )}
 
       {older.length > 0 && (
         <details className="border-t border-zinc-100">
-          <summary className="px-4 py-2 text-xs text-zinc-600 cursor-pointer">Các lần quét trước trong {runs.length} lần gần nhất ({older.length})</summary>
-          {older.map((r) => (
-            <RunBlock key={r.id} r={r} />
+          <summary className="px-4 py-2 text-xs text-zinc-600 cursor-pointer">Các lần quét cũ, xếp theo tuần ({older.length})</summary>
+          {weeks.map((w) => (
+            <details key={w.start} className="border-t border-zinc-100">
+              <summary className="pl-8 pr-4 py-2 text-xs text-zinc-700 cursor-pointer flex flex-wrap items-center gap-x-3 gap-y-1">
+                <b className="text-zinc-900">Tuần {fmtDM(w.start)} – {fmtDM(w.end)}/{w.end.slice(0, 4)}</b>
+                <span>{w.runs.length} lần quét</span>
+                <span className="text-zinc-500">
+                  tìm thấy {w.runs.reduce((a, r) => a + (r.n_found ?? r.discovery_candidates.length), 0)} · đề xuất {w.runs.reduce((a, r) => a + (r.n_proposed ?? 0), 0)}
+                </span>
+              </summary>
+              {w.runs.map((r) => (
+                <RunBlock key={r.id} r={r} />
+              ))}
+            </details>
           ))}
         </details>
       )}
@@ -176,9 +214,6 @@ export function DiscoverySection({ runs, categories, icon }: { runs: DiscoveryRu
                 <tr key={c.category} className={`border-t border-zinc-100 align-top ${c.active ? '' : 'text-zinc-400'}`}>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <span className="font-medium">{c.category}</span>
-                    {next.some((n) => n.category === c.category) && (
-                      <span className="ml-1.5 text-[10px] px-1 py-0.5 rounded bg-zinc-900 text-white">lần tới</span>
-                    )}
                     {!c.active && <span className="ml-1.5 text-[10px]">(không làm)</span>}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap text-xs">{c.last_run_on ? `${c.last_run_on} · ${daysAgo(c.last_run_on)} ngày trước` : 'Chưa quét'}</td>
