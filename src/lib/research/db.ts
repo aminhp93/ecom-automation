@@ -56,6 +56,10 @@ export interface ProductOverview {
   au_price: number | null;
   uk_searches: number | null;
   meta_au_active_ads: number | null;
+  meta_au_ads_n?: number | null;
+  meta_au_top2?: string | null;
+  meta_us_ads_n?: number | null;
+  meta_us_top2?: string | null;
   meta_au_sample: number | null;
   meta_au_method: string | null;
   meta_au_captured_on: string | null;
@@ -338,6 +342,33 @@ export interface ProductDetail {
 
 export const getOverview = () =>
   get<ProductOverview[]>('v_product_overview?select=*&order=score.desc.nullslast');
+
+/** Bảng phẳng giống sheet pipeline (view v_pipeline_sheet): sản phẩm + ứng viên discover chưa thành sản phẩm. */
+export interface MetaPageRef { n: string; id: string; a: number | null; t: number | null; y: string | null; s?: number | null }
+export type PipelineRow = Record<string, string | number | null | MetaPageRef[] | undefined>;
+export const getPipelineSheet = () =>
+  get<PipelineRow[]>('v_pipeline_sheet?select=*&order=loai_dong.asc,score.desc.nullslast,ngay_quet.desc.nullslast');
+
+/** Bản chụp độc lập của bảng tổng hợp (mỗi lần fetch một bản). draft = chờ duyệt, published = đang dùng, rejected = bị từ chối. */
+export interface PipelineSnapshotMeta {
+  id: number;
+  taken_at: string;
+  taken_on: string;
+  status: 'draft' | 'published' | 'rejected' | 'superseded';
+  note: string | null;
+  row_count: number;
+  sources: Record<string, { captured_on: string | null; data_month?: string | null; country?: string }>;
+  published_at: string | null;
+  based_on: number | null;
+}
+export const getPipelineSnapshots = () => get<PipelineSnapshotMeta[]>('pipeline_snapshots?select=*&order=id.desc');
+export const getSnapshotRows = (id: number) =>
+  get<{ key: string; row: PipelineRow }[]>(`pipeline_snapshot_rows?select=key,row&snapshot_id=eq.${id}&limit=5000`);
+/** Tag do người dùng đặt: lấy trực tiếp (không nằm trong bản chụp). Khoá = loai_dong:ref. */
+export const getPipelineTags = async () => {
+  const rows = await get<{ ref: string; loai_dong: string; nhom: string | null }[]>('v_pipeline_sheet?select=ref,loai_dong,nhom');
+  return new Map(rows.map((r) => [`${r.loai_dong}:${r.ref}`, r.nhom]));
+};
 
 export const getSessions = () =>
   get<ResearchSession[]>(

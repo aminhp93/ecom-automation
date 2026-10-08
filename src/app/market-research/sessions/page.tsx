@@ -19,7 +19,7 @@ export default async function SessionsPage() {
           <p className="text-sm text-zinc-600 mt-1 max-w-2xl">Lưu sản phẩm đã xem, ý kiến của anh Thanh và quyết định trong từng buổi. Dùng để nhớ vì sao đã chọn, bỏ hoặc cần kiểm tra thêm.</p>
           <p className="text-xs text-zinc-500 mt-1 max-w-2xl">
             Mỗi buổi học/chọn sản phẩm: tiêu chí anh Thanh dùng, sản phẩm đã xem và kết quả. Tiêu chí ở đây được đưa vào bộ tiêu chí
-            chấm điểm (<Link href="/research/criteria" className="underline">xem v3</Link>).
+            chấm điểm (<Link href="/market-research/criteria" className="underline">xem v3</Link>).
           </p>
         </div>
         <CopyCommand label="Ghi phiên mới từ transcript" command="/dropship-research session <đường dẫn file .srt/.txt>" />
@@ -37,7 +37,7 @@ export default async function SessionsPage() {
               {s.session_products.map((sp) => (
                 <Link
                   key={sp.products.slug}
-                  href={`/research/p/${sp.products.slug}`}
+                  href={`/market-research/p/${sp.products.slug}`}
                   title={sp.note ?? undefined}
                   className={`text-xs px-2 py-1 rounded-md border hover:opacity-80 ${outcomeClass(sp.outcome)}`}
                 >

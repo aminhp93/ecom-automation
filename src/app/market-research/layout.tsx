@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { AppShell } from '@/components/dashboard/AppShell';
 import { ResearchNav } from '@/components/research/ResearchNav';
 import { BasisTabs } from '@/components/research/BasisTabs';
+import { ResearchMain } from '@/components/research/ResearchMain';
 
 export const metadata: Metadata = {
   title: 'Market Research — Ecom OS',
@@ -9,12 +11,14 @@ export const metadata: Metadata = {
 
 export default function ResearchLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[#fafafa]">
-      <ResearchNav />
-      <main className="max-w-6xl mx-auto px-5 py-5 space-y-4">
-        <BasisTabs />
-        {children}
-      </main>
-    </div>
+    <AppShell currentStage="01">
+      <div className="min-h-full bg-[#fafafa]">
+        <ResearchNav />
+        <ResearchMain>
+          <BasisTabs />
+          {children}
+        </ResearchMain>
+      </div>
+    </AppShell>
   );
 }

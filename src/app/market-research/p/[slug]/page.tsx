@@ -127,7 +127,7 @@ export default async function ProductDossierPage({
 }) {
   const [{ slug }, sp] = await Promise.all([params, searchParams]);
   const tab: TabKey = TAB_KEYS.includes(sp.tab as TabKey) ? (sp.tab as TabKey) : 'overview';
-  const tabHref = (t: string) => (t === 'overview' ? `/research/p/${slug}` : `/research/p/${slug}?tab=${t}`);
+  const tabHref = (t: string) => (t === 'overview' ? `/market-research/p/${slug}` : `/market-research/p/${slug}?tab=${t}`);
   const [d, criteria, versions] = await Promise.all([getProductDetail(slug), getCriteria(), getCriteriaVersions()]);
   if (!d) notFound();
   const o = d.overview;
@@ -153,7 +153,7 @@ export default async function ProductDossierPage({
   return (
     <>
       <div className="text-xs text-zinc-500">
-        <Link href="/research/products" className="hover:underline">
+        <Link href="/market-research/pipeline" className="hover:underline">
           Pipeline
         </Link>{' '}
         / {o.name_vi}
@@ -190,7 +190,7 @@ export default async function ProductDossierPage({
             <p className="text-xs text-zinc-600">
               Phiên bản khác:{' '}
               {d.variants.map((v) => (
-                <Link key={v.slug} href={`/research/p/${v.slug}`} title={v.variant_note ?? undefined} className="text-sky-700 hover:underline mr-2">
+                <Link key={v.slug} href={`/market-research/p/${v.slug}`} title={v.variant_note ?? undefined} className="text-sky-700 hover:underline mr-2">
                   {v.name_vi}
                 </Link>
               ))}
@@ -208,7 +208,7 @@ export default async function ProductDossierPage({
             <p className="text-[11px] text-zinc-500">
               Phiên nghiên cứu:{' '}
               {d.sessions.map((x) => (
-                <Link key={x.research_sessions.id} href="/research/sessions" className="underline mr-2">
+                <Link key={x.research_sessions.id} href="/market-research/sessions" className="underline mr-2">
                   {x.research_sessions.held_on} — {x.outcome}
                 </Link>
               ))}
@@ -459,7 +459,7 @@ export default async function ProductDossierPage({
                   <Card
                     title={SHOW_COMPUTED_SCORE ? `Điểm theo tiêu chí ${current.version}` : `Số liệu và kiểm tra theo tiêu chí ${current.version}`}
                     right={
-                      <Link href="/research/criteria" className="text-[11px] text-zinc-500 underline">
+                      <Link href="/market-research/criteria" className="text-[11px] text-zinc-500 underline">
                         xem bộ tiêu chí
                       </Link>
                     }

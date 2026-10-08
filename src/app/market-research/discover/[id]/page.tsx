@@ -392,7 +392,7 @@ export default async function CandidatePage({
   return (
     <>
       <div className="text-xs text-zinc-500">
-        <Link href="/research/discover" className="hover:underline">Sản phẩm tiềm năng</Link> / {c.name_vi ?? c.keyword}
+        <Link href="/market-research/pipeline?nhom=tiem-nang" className="hover:underline">Sản phẩm tiềm năng</Link> / {c.name_vi ?? c.keyword}
       </div>
 
       <section className="bg-white border border-zinc-200 rounded-lg p-4 flex flex-wrap gap-4 items-start justify-between">
@@ -412,7 +412,7 @@ export default async function CandidatePage({
           </div>
           {c.products && (
             <p className="text-xs text-zinc-600">
-              Đã vào pipeline: <Link href={`/research/p/${c.products.slug}`} className="text-sky-700 hover:underline">{c.products.name_vi}</Link>
+              Đã vào pipeline: <Link href={`/market-research/p/${c.products.slug}`} className="text-sky-700 hover:underline">{c.products.name_vi}</Link>
             </p>
           )}
         </div>

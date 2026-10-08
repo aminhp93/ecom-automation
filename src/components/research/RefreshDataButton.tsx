@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { RefreshCw } from 'lucide-react';
-import { refreshResearchData } from '@/app/research/actions';
+import { refreshResearchData } from '@/app/market-research/actions';
 
 /** Dữ liệu research được cache 10 phút; bấm để lấy số mới ngay sau khi Claude ghi dữ liệu. */
 export function RefreshDataButton() {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Compass,
   CheckCircle2,
@@ -124,36 +125,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className={`border-b border-zinc-200 flex items-center transition-all duration-300 ${
         collapsed ? 'flex-col p-2.5 gap-2 justify-center' : 'p-3.5 justify-between'
       }`}>
-        <div className="flex items-center gap-2.5">
-          <div className="relative">
-            <div className="w-7 h-7 rounded-md bg-black text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              E
-            </div>
-            {collapsed && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-white animate-pulse" />
-            )}
+        {/* Logo + phiên bản: bấm để về trang chủ `/` */}
+        <Link href="/" className="flex items-center gap-2.5" title="Về trang chủ" aria-label="Về trang chủ">
+          <div className="w-7 h-7 rounded-md bg-black text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            E
           </div>
           {!collapsed && (
-            <div className="min-w-0">
-              <div className="font-semibold text-zinc-900 tracking-tight flex items-center gap-1.5 text-xs truncate">
-                Ecom OS
-                <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-zinc-100 text-zinc-600 border border-zinc-200">
-                  v1.0
-                </span>
-              </div>
-              <div className="text-[11px] text-zinc-500 truncate">Autonomous Pipeline</div>
-            </div>
+            <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-zinc-100 text-zinc-600 border border-zinc-200">
+              v1.0
+            </span>
           )}
-        </div>
+        </Link>
 
         <div className="flex items-center gap-1">
-          {!collapsed && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 mr-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[10px] font-mono text-emerald-700 font-medium">Online</span>
-            </div>
-          )}
-
           {/* Collapse / Expand Toggle Button */}
           <button
             type="button"

@@ -49,7 +49,7 @@ export default async function DataQualityPage() {
             <h2 className="text-xs font-semibold mb-2">{m.label} ({m.list.length})</h2>
             <div className="flex flex-wrap gap-1.5">
               {m.list.slice(0, 40).map((r) => (
-                <Link key={r.product_id} href={`/research/p/${r.slug}`} className="text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 hover:bg-zinc-200">
+                <Link key={r.product_id} href={`/market-research/p/${r.slug}`} className="text-[11px] px-1.5 py-0.5 rounded bg-zinc-100 hover:bg-zinc-200">
                   {r.name_vi}
                 </Link>
               ))}

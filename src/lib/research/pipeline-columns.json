@@ -1,0 +1,278 @@
+[
+ {
+  "key": "name_vi",
+  "label": "Sản phẩm",
+  "type": "text",
+  "w": 240
+ },
+ {
+  "key": "nhom",
+  "label": "Tag",
+  "type": "group",
+  "w": 80
+ },
+ {
+  "key": "meta_pages",
+  "label": "Meta pages: active/tổng - năm tạo page (bấm để mở Ads Library)",
+  "type": "text",
+  "w": 330
+ },
+ {
+  "key": "reason",
+  "label": "Lý do",
+  "type": "text",
+  "w": 200,
+  "maxw": 200
+ },
+ {
+  "key": "meta_au_ads_n",
+  "label": "Meta Ads AU: ad active",
+  "type": "int",
+  "w": 90,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_au_top2",
+  "label": "Meta Ads AU: advertiser nổi bật",
+  "type": "text",
+  "w": 260,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_us_ads_n",
+  "label": "Meta Ads US: ad active",
+  "type": "int",
+  "w": 90,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_us_top2",
+  "label": "Meta Ads US: advertiser nổi bật",
+  "type": "text",
+  "w": 260,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_au_active_ads",
+  "label": "Meta Ads (mọi nước): ad active",
+  "type": "int",
+  "w": 90,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_au_advertisers",
+  "label": "Meta Ads (mọi nước): số advertiser (trong mẫu)",
+  "type": "int",
+  "w": 110,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_au_over60",
+  "label": "Meta Ads (mọi nước): ad chạy >60 ngày (trong mẫu)",
+  "type": "int",
+  "w": 110,
+  "tint": "meta"
+ },
+ {
+  "key": "meta_au_top",
+  "label": "Meta Ads (mọi nước): advertiser nổi bật",
+  "type": "text",
+  "w": 300,
+  "tint": "meta"
+ },
+ {
+  "key": "us_searches",
+  "label": "Amazon US search/tháng",
+  "type": "int",
+  "w": 110,
+  "tint": "amazon"
+ },
+ {
+  "key": "us_purchases",
+  "label": "Amazon US mua/tháng",
+  "type": "int",
+  "w": 100,
+  "tint": "amazon"
+ },
+ {
+  "key": "us_purchase_rate",
+  "label": "Tỷ lệ mua/search US",
+  "type": "pct",
+  "w": 90,
+  "tint": "amazon"
+ },
+ {
+  "key": "au_searches",
+  "label": "Amazon AU search/tháng",
+  "type": "int",
+  "w": 110,
+  "tint": "amazon"
+ },
+ {
+  "key": "au_price",
+  "label": "Amazon AU giá TB (A$)",
+  "type": "num2",
+  "w": 90,
+  "tint": "amazon"
+ },
+ {
+  "key": "us_price",
+  "label": "Amazon US giá TB ($)",
+  "type": "num2",
+  "w": 90,
+  "tint": "amazon"
+ },
+ {
+  "key": "us_click_conc",
+  "label": "Amazon US độ tập trung click",
+  "type": "pct",
+  "w": 100,
+  "tint": "amazon"
+ },
+ {
+  "key": "uk_searches",
+  "label": "Amazon UK search/tháng",
+  "type": "int",
+  "w": 110,
+  "tint": "amazon"
+ },
+ {
+  "key": "uk_price",
+  "label": "Amazon UK giá TB (£)",
+  "type": "num2",
+  "w": 90,
+  "tint": "amazon"
+ },
+ {
+  "key": "tt_units_30d",
+  "label": "TikTok US: SKU top bán 30 ngày",
+  "type": "int",
+  "w": 110
+ },
+ {
+  "key": "tt_price",
+  "label": "TikTok US: giá TB SKU top ($)",
+  "type": "num2",
+  "w": 100
+ },
+ {
+  "key": "tt_top_item",
+  "label": "TikTok US: SKU top",
+  "type": "text",
+  "w": 260
+ },
+ {
+  "key": "tt_video_url",
+  "label": "TikTok: video nổi bật",
+  "type": "url",
+  "w": 160
+ },
+ {
+  "key": "tt_views",
+  "label": "TikTok: view video",
+  "type": "int",
+  "w": 100
+ },
+ {
+  "key": "trend_floor",
+  "label": "Trends US (2022–2/2026): sàn P10/median",
+  "type": "num2",
+  "w": 110
+ },
+ {
+  "key": "trend_season",
+  "label": "Trends: mùa vụ max/median",
+  "type": "num2",
+  "w": 100
+ },
+ {
+  "key": "trend_growth",
+  "label": "Trends: tăng trưởng 2025/2022",
+  "type": "num2",
+  "w": 100
+ },
+ {
+  "key": "weight_class",
+  "label": "Cân nặng [ước tính]",
+  "type": "text",
+  "w": 80
+ },
+ {
+  "key": "hazmat",
+  "label": "Pin/lỏng/dễ vỡ/lưỡi dao",
+  "type": "text",
+  "w": 100
+ },
+ {
+  "key": "policy_risk",
+  "label": "Rủi ro chính sách/claim [ước tính]",
+  "type": "text",
+  "w": 100
+ },
+ {
+  "key": "retail_risk",
+  "label": "Rủi ro siêu thị Kmart/BigW/Walmart [ước tính]",
+  "type": "text",
+  "w": 110
+ },
+ {
+  "key": "bundle_potential",
+  "label": "Khả năng bundle/AOV [ước tính]",
+  "type": "text",
+  "w": 100
+ },
+ {
+  "key": "target_dtc_price",
+  "label": "Giá bán DTC mục tiêu [ước tính]",
+  "type": "text",
+  "w": 120
+ },
+ {
+  "key": "landed_cost",
+  "label": "Giá nhập/landed cost",
+  "type": "text",
+  "w": 150
+ },
+ {
+  "key": "category",
+  "label": "Ngành",
+  "type": "text",
+  "w": 120
+ },
+ {
+  "key": "keyword",
+  "label": "Keyword (EN)",
+  "type": "text",
+  "w": 170
+ },
+ {
+  "key": "cluster",
+  "label": "Cụm store",
+  "type": "text",
+  "w": 200
+ },
+ {
+  "key": "missing",
+  "label": "Thiếu dữ liệu",
+  "type": "text",
+  "w": 160
+ },
+ {
+  "key": "n_empty",
+  "label": "Số chỉ số trống",
+  "type": "int",
+  "w": 80
+ },
+ {
+  "key": "ngay_quet",
+  "label": "Ngày quét Meta/ứng viên",
+  "type": "text",
+  "w": 110
+ },
+ {
+  "key": "ref",
+  "label": "Mã (slug / id ứng viên)",
+  "type": "text",
+  "w": 180
+ }
+]

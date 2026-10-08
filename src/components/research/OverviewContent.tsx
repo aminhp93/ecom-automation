@@ -1,3 +1,4 @@
+// Nội dung trang Tổng quan Market Research, dùng chung cho /market-research và khung chính của trang chủ `/`.
 import Link from 'next/link';
 import { ClipboardList, Play, Search, Sparkles } from 'lucide-react';
 import { getCriteria, getCriteriaVersions, getDiscovery, getOverview, type ProductOverview } from '@/lib/research/db';
@@ -17,9 +18,9 @@ function TodoGroup({ icon, title, hint, items, collapsed = false }: {
   const list = <ul className="divide-y divide-zinc-100">
     {items.map(({ r, detail, command }) => (
       <li key={r.product_id} className="flex flex-wrap items-center gap-2 px-3 py-3 text-xs">
-        <Link href={`/research/p/${r.slug}`} className="font-medium text-zinc-900 hover:underline">{r.name_vi}</Link>
+        <Link href={`/market-research/p/${r.slug}`} className="font-medium text-zinc-900 hover:underline">{r.name_vi}</Link>
         <span className="text-zinc-500 flex-1 min-w-[200px]">{detail}</span>
-        <Link href={`/research/p/${r.slug}`} className="text-emerald-700 font-medium hover:underline">Mở hồ sơ →</Link>
+        <Link href={`/market-research/p/${r.slug}`} className="text-emerald-700 font-medium hover:underline">Mở hồ sơ →</Link>
         <CopyCommand label="Copy lệnh" command={command} />
       </li>
     ))}
@@ -34,7 +35,7 @@ function TodoGroup({ icon, title, hint, items, collapsed = false }: {
   </div>;
 }
 
-export default async function ResearchOverviewPage() {
+export async function OverviewContent() {
   const [rows, versions, discovery] = await Promise.all([getOverview(), getCriteriaVersions(), getDiscovery()]);
   const current = versions.find((v) => v.is_current);
   const criteria = current ? await getCriteria(current.version) : [];
@@ -90,7 +91,7 @@ export default async function ResearchOverviewPage() {
 
     <section className="grid grid-cols-3 gap-2" aria-label="Nhóm sản phẩm">
       {tiles.map((t) => (
-        <Link key={t.key} href={t.key === 'chon' ? '/research/products' : `/research/products?nhom=${t.key === 'theo_doi' ? 'theo-doi' : t.key}`} title={t.hint} className={`border rounded-lg p-3 hover:opacity-80 ${t.cls}`}>
+        <Link key={t.key} href={`/market-research/pipeline?nhom=${t.key === 'theo_doi' ? 'theo-doi' : t.key}`} title={t.hint} className={`border rounded-lg p-3 hover:opacity-80 ${t.cls}`}>
           <div className="text-xs">{t.label}</div>
           <div className="text-2xl font-semibold tabular-nums mt-0.5">{t.n}</div>
           <p className="text-[11px] mt-2">{t.hint}</p>
@@ -112,7 +113,7 @@ export default async function ResearchOverviewPage() {
         <Sparkles className="w-4 h-4 text-violet-600" />
         <h2 className="text-xs font-semibold text-zinc-900">Sản phẩm tiềm năng</h2>
         <span className="text-[11px] text-zinc-500">Từ các lần tìm SP mới gần nhất · mỗi thứ Hai quét tất cả ngành</span>
-        <Link href="/research/discover" className="ml-auto text-xs text-sky-700 underline">Xem tất cả sản phẩm tiềm năng →</Link>
+        <Link href="/market-research/pipeline?nhom=tiem-nang" className="ml-auto text-xs text-sky-700 underline">Xem tất cả sản phẩm tiềm năng →</Link>
       </div>
       {candidates.length === 0 ? (
         <p className="px-3 py-2.5 text-xs text-zinc-500">Chưa có ứng viên — lần quét đầu tự chạy sáng thứ 2.</p>
@@ -121,9 +122,9 @@ export default async function ResearchOverviewPage() {
           {candidates.map((c) => (
             <li key={c.id} className="flex flex-wrap items-center gap-2 px-3 py-2 text-xs">
               {c.products ? (
-                <Link href={`/research/p/${c.products.slug}`} className="font-medium text-zinc-900 hover:underline">{c.products.name_vi}</Link>
+                <Link href={`/market-research/p/${c.products.slug}`} className="font-medium text-zinc-900 hover:underline">{c.products.name_vi}</Link>
               ) : (
-                <Link href={`/research/discover/${c.id}`} className="font-medium text-zinc-900 hover:underline">{c.name_vi ?? c.keyword}</Link>
+                <Link href={`/market-research/discover/${c.id}`} className="font-medium text-zinc-900 hover:underline">{c.name_vi ?? c.keyword}</Link>
               )}
               <span className="text-zinc-500 flex-1 min-w-[200px]">{c.category} · {c.screen?.reason ?? c.keyword}</span>
             </li>
@@ -144,8 +145,8 @@ export default async function ResearchOverviewPage() {
     </section>
 
     <p className="text-xs text-zinc-500">
-      <b>Tổng quan</b> để định hướng → <Link href="/research/products" className="underline">Sản phẩm</Link> để làm việc →{' '}
-      <Link href="/research/criteria" className="underline">Cơ sở đánh giá</Link> để tra cứu. Mức sẵn sàng và bằng chứng quan trọng hơn mọi con số tính toán; “đã thêm vào danh sách” chưa có nghĩa là “đã chọn để bán”.
+      <b>Tổng quan</b> để định hướng → <Link href="/market-research/pipeline" className="underline">Bảng tổng hợp</Link> để làm việc →{' '}
+      <Link href="/market-research/criteria" className="underline">Cơ sở đánh giá</Link> để tra cứu. Mức sẵn sàng và bằng chứng quan trọng hơn mọi con số tính toán; “đã thêm vào danh sách” chưa có nghĩa là “đã chọn để bán”.
     </p>
   </>;
 }
