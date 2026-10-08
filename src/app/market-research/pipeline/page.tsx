@@ -4,7 +4,7 @@ import { HelpPopover } from '@/components/research/HelpPopover';
 import { VersionSelect } from '@/components/research/VersionSelect';
 import { Download } from 'lucide-react';
 import columns from '@/lib/research/pipeline-columns.json';
-import { RULES, TEXT_RULES } from '@/lib/research/pipeline-rules';
+import { RULES, SCORE_CRITERIA, SCORE_INTRO, TEXT_RULES } from '@/lib/research/pipeline-rules';
 
 // Link cũ (chọn / tiềm năng) không còn nhóm tương ứng nên mở tab Tất cả.
 const TAB_FROM_PARAM: Record<string, GroupTab> = { 'theo-doi': 'theo-doi', loai: 'loai', 'chua-tag': 'chua-tag' };
@@ -90,6 +90,11 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
             </li>
           ))}
         </ul>
+        <p className="font-medium text-zinc-800 pt-1">Điểm tiềm năng (0–9)</p>
+        <p>{SCORE_INTRO}</p>
+        <ol className="list-decimal pl-4 space-y-0.5">
+          {SCORE_CRITERIA.map((t) => <li key={t}>{t}</li>)}
+        </ol>
         <p>Số Topview là ước tính. Số ad Meta “mọi nước” là số ad đang chạy ở mọi quốc gia, cột AU/US ở cuối bảng chỉ tính từng nước; số advertiser và ad &gt;60 ngày tính trong mẫu ~30 ad đầu, không phải toàn bộ.</p>
       </HelpPopover>
     </>

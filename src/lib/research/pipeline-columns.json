@@ -6,6 +6,12 @@
   "w": 240
  },
  {
+  "key": "diem_tiem_nang",
+  "label": "Điểm tiềm năng (0–9)",
+  "type": "int",
+  "w": 90
+ },
+ {
   "key": "nhom",
   "label": "Tag",
   "type": "group",
@@ -28,57 +34,60 @@
   "key": "meta_au_ads_n",
   "label": "Meta Ads AU: ad active",
   "type": "int",
-  "w": 90,
+  "w": 70,
   "tint": "meta"
  },
  {
   "key": "meta_au_top2",
   "label": "Meta Ads AU: advertiser nổi bật",
   "type": "text",
-  "w": 260,
-  "tint": "meta"
+  "w": 170,
+  "tint": "meta",
+  "maxw": 170
  },
  {
   "key": "meta_us_ads_n",
   "label": "Meta Ads US: ad active",
   "type": "int",
-  "w": 90,
+  "w": 70,
   "tint": "meta"
  },
  {
   "key": "meta_us_top2",
   "label": "Meta Ads US: advertiser nổi bật",
   "type": "text",
-  "w": 260,
-  "tint": "meta"
+  "w": 170,
+  "tint": "meta",
+  "maxw": 170
  },
  {
   "key": "meta_au_active_ads",
   "label": "Meta Ads (mọi nước): ad active",
   "type": "int",
-  "w": 90,
+  "w": 70,
   "tint": "meta"
  },
  {
   "key": "meta_au_advertisers",
   "label": "Meta Ads (mọi nước): số advertiser (trong mẫu)",
   "type": "int",
-  "w": 110,
+  "w": 70,
   "tint": "meta"
  },
  {
   "key": "meta_au_over60",
   "label": "Meta Ads (mọi nước): ad chạy >60 ngày (trong mẫu)",
   "type": "int",
-  "w": 110,
+  "w": 70,
   "tint": "meta"
  },
  {
   "key": "meta_au_top",
   "label": "Meta Ads (mọi nước): advertiser nổi bật",
   "type": "text",
-  "w": 300,
-  "tint": "meta"
+  "w": 170,
+  "tint": "meta",
+  "maxw": 170
  },
  {
   "key": "us_searches",

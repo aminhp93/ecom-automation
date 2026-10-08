@@ -22,6 +22,8 @@ export const RULES: Record<string, Rule> = {
   meta_au_ads_n: { dir: 'high', good: 100, bad: 10 },
   meta_us_ads_n: { dir: 'high', good: 700, bad: 50 },
   n_empty: { dir: 'low', good: 3, bad: 8 },
+  diem_tiem_nang: { dir: 'high', good: 6, bad: 3 },
+  diem_chua_ro: { dir: 'low', good: 1, bad: 4 },
 };
 
 export type Tone = 'good' | 'bad' | null;
@@ -51,6 +53,7 @@ export const TEXT_RULES: Record<string, { rule: (v: string) => Tone; legend: str
   hazmat: { rule: (v) => (v === 'Không' ? 'good' : 'bad'), legend: 'xanh = Không, đỏ = có pin / lỏng / dễ vỡ / dao' },
   policy_risk: { rule: (v) => LEVEL('good', 'bad')[v] ?? null, legend: 'xanh = Thấp, đỏ = Cao' },
   retail_risk: { rule: (v) => LEVEL('good', 'bad')[v] ?? null, legend: 'xanh = Thấp, đỏ = Cao' },
+  rao_can_san: { rule: (v) => LEVEL('bad', 'good')[v] ?? null, legend: 'xanh = Cao (sàn khó bán sẵn), đỏ = Thấp' },
   bundle_potential: { rule: (v) => LEVEL('bad', 'good')[v] ?? null, legend: 'xanh = Cao, đỏ = Thấp' },
   target_dtc_price: {
     rule: (v) => {
@@ -67,3 +70,18 @@ export function textToneOf(key: string, value: unknown): Tone {
   const r = TEXT_RULES[key];
   return r && typeof value === 'string' && value.trim() ? r.rule(value.trim()) : null;
 }
+
+// Cách tính "Điểm tiềm năng" (0–9): mỗi tiêu chí 1 điểm, thiếu dữ liệu thì 0 điểm. Logic thật nằm ở view v_pipeline_sheet (scripts/research/sql/2026-10-08_pipeline_score.sql).
+export const SCORE_INTRO =
+  'Chỉ chấm sản phẩm qua lọc cứng (không nặng, không pin/dễ vỡ/dao, chính sách và rủi ro siêu thị không Cao). Mỗi tiêu chí 1 điểm; thiếu dữ liệu thì 0 điểm, nên điểm thấp có thể do chưa kiểm tra.';
+export const SCORE_CRITERIA = [
+  'Search Amazon AU ≥ 5.000/tháng',
+  '≥ 100 ad AU đang chạy',
+  '≥ 15 ad chạy >60 ngày (mẫu mọi nước)',
+  'Giá bán DTC mục tiêu ≥ 50',
+  'Search US ≥ 100.000 và tỷ lệ mua ≥ 2%',
+  'Trends không mùa vụ (≤ 2,5) và không giảm',
+  'Khả năng bundle Cao',
+  'Rủi ro siêu thị Thấp',
+  'Rào cản với sàn Cao hoặc TB (chưa đánh giá thì 0 điểm, không đoán)',
+];

@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import columns from '@/lib/research/pipeline-columns.json';
 import type { MetaPageRef, PipelineRow } from '@/lib/research/db';
+import { ScoreHelp } from '@/components/research/ScoreHelp';
 import { adsLibraryPageUrl } from '@/lib/research/adsLibraryUrl';
 import { textToneOf, toneOf, TONE_CLASS } from '@/lib/research/pipeline-rules';
 
@@ -99,7 +100,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
         if (y === null || y === undefined) return -1;
         return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'vi')) * dir;
       }
-      return tag(a) - tag(b) || num(b.au_searches) - num(a.au_searches) || num(b.meta_au_active_ads) - num(a.meta_au_active_ads);
+      return tag(a) - tag(b) || num(b.diem_tiem_nang) - num(a.diem_tiem_nang) || num(b.au_searches) - num(a.au_searches) || num(b.meta_au_active_ads) - num(a.meta_au_active_ads);
     });
     return out;
   }, [rows, tab, q, category, sort]);
@@ -150,7 +151,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
                   style={{ minWidth: c.w, maxWidth: 'maxw' in c ? c.maxw : undefined }}
                   title="Bấm để sắp xếp"
                 >
-                  {c.label}{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}
+                  {c.label}{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}{c.key === 'diem_tiem_nang' && <ScoreHelp />}
                 </th>
               ))}
             </tr>

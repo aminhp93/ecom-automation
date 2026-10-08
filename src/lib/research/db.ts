@@ -60,6 +60,9 @@ export interface ProductOverview {
   meta_au_top2?: string | null;
   meta_us_ads_n?: number | null;
   meta_us_top2?: string | null;
+  rao_can_san?: string | null;
+  diem_tiem_nang?: number | null;
+  diem_chua_ro?: number | null;
   meta_au_sample: number | null;
   meta_au_method: string | null;
   meta_au_captured_on: string | null;
