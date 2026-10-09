@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import columns from '@/lib/research/pipeline-columns.json';
 import type { LocalRef, MetaPageRef, PipelineRow, SocialRef } from '@/lib/research/db';
@@ -15,6 +15,13 @@ import { textToneOf, toneOf, TONE_CLASS } from '@/lib/research/pipeline-rules';
 type Col = (typeof columns)[number];
 const NAME_KEY = 'name_vi';
 const PAGE_SIZE = 10;
+// Cột ẩn mặc định (người dùng bật lại ở nút "Cột"; lựa chọn được nhớ trong trình duyệt). Cột tên sản phẩm luôn hiện.
+const DEFAULT_HIDDEN = ['keyword', 'ref', 'cluster', 'landed_cost'];
+const HIDDEN_STORAGE_KEY = 'pipeline.hiddenColumns.v1';
+const shortLabel = (label: string) => {
+  const t = label.replace(/\s*\([^)]*\)\s*$/, ''); // chỉ bỏ phần giải thích trong ngoặc ở cuối nhãn
+  return t.length > 56 ? `${t.slice(0, 55)}…` : t;
+};
 // Nền theo nhóm cột (khóa `tint` trong pipeline-columns.json): Amazon xanh lá, Meta Ads vàng.
 const TINT_HEAD: Record<string, string> = { amazon: 'bg-green-100', meta: 'bg-yellow-100' };
 const TINT_CELL: Record<string, string> = { amazon: 'bg-green-50', meta: 'bg-yellow-50' };
@@ -99,7 +106,57 @@ function SocialPages({ refs }: { refs: SocialRef[] | null | undefined }) {
   );
 }
 
-export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolbarRight }: { rows: PipelineRow[]; initialTab?: GroupTab; toolbarLeft?: React.ReactNode; toolbarRight?: React.ReactNode }) {
+/** Nút "Cột": bật/tắt từng cột của bảng. Cột tên sản phẩm luôn hiện. */
+function ColumnPicker({ hidden, onToggle, onReset, onShowAll }: { hidden: Set<string>; onToggle: (key: string) => void; onReset: () => void; onShowAll: () => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  const toggleable = columns.filter((c) => c.key !== NAME_KEY);
+  const shownCount = toggleable.filter((c) => !hidden.has(c.key)).length;
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        title="Chọn cột hiển thị"
+        className="inline-flex items-center gap-1 text-xs border border-zinc-200 rounded-md px-2 py-1 bg-white hover:bg-zinc-50 text-zinc-700"
+      >
+        Cột <span className="tabular-nums text-zinc-400">{shownCount}/{toggleable.length}</span>
+      </button>
+      {open && (
+        <div className="absolute right-0 bottom-full mb-1 z-50 w-80 max-h-[70vh] overflow-auto rounded-lg border border-zinc-200 bg-white shadow-lg p-2 text-xs">
+          <div className="flex items-center justify-between gap-2 pb-1.5 mb-1 border-b border-zinc-100 sticky top-0 bg-white">
+            <span className="text-zinc-500">Cột Sản phẩm luôn hiện</span>
+            <span className="flex gap-1.5">
+              <button type="button" onClick={onReset} className="rounded border border-zinc-200 px-1.5 py-0.5 hover:bg-zinc-50">Mặc định</button>
+              <button type="button" onClick={onShowAll} className="rounded border border-zinc-200 px-1.5 py-0.5 hover:bg-zinc-50">Hiện hết</button>
+            </span>
+          </div>
+          <ul>
+            {toggleable.map((c) => (
+              <li key={c.key}>
+                <label className="flex items-start gap-2 rounded px-1 py-0.5 hover:bg-zinc-50 cursor-pointer">
+                  <input type="checkbox" className="mt-0.5 accent-sky-600" checked={!hidden.has(c.key)} onChange={() => onToggle(c.key)} />
+                  <span className={hidden.has(c.key) ? 'text-zinc-400' : 'text-zinc-800'}>{shortLabel(c.label)}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settingsStart, settingsEnd }: { rows: PipelineRow[]; initialTab?: GroupTab; toolbarLeft?: React.ReactNode; settingsStart?: React.ReactNode; settingsEnd?: React.ReactNode }) {
   const [tab, setTab] = useState<GroupTab>(initialTab);
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
@@ -108,6 +165,20 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
   const [selected, setSelected] = useState<Set<string>>(new Set()); // dòng đã chọn (giữ khi đổi trang, lọc, sắp xếp)
   const [copiedN, setCopiedN] = useState<number | null>(null);
   const [page, setPage] = useState(0); // phân trang 10 dòng; về trang đầu khi đổi nhóm, tìm kiếm, ngành, sắp xếp
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(DEFAULT_HIDDEN)); // cột đang ẩn
+  useEffect(() => {
+    // Đọc lựa chọn đã lưu sau khi mount (tránh lệch HTML giữa server và client).
+    try {
+      const raw = window.localStorage.getItem(HIDDEN_STORAGE_KEY);
+      if (raw) setHidden(new Set((JSON.parse(raw) as unknown[]).filter((k): k is string => typeof k === 'string')));
+    } catch { /* không bắt buộc */ }
+  }, []);
+  const saveHidden = (next: Set<string>) => {
+    setHidden(next);
+    try { window.localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify([...next])); } catch { /* không bắt buộc */ }
+  };
+  const toggleColumn = (key: string) => { const n = new Set(hidden); if (n.has(key)) n.delete(key); else n.add(key); saveHidden(n); };
+  const shownCols = useMemo(() => columns.filter((c) => c.key === NAME_KEY || !hidden.has(c.key)), [hidden]);
 
   const counts = useMemo(() => {
     const c = { theo_doi: 0, loai: 0, none: 0, seen: 0, unseen: 0 };
@@ -233,27 +304,13 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
           <option value="">Mọi ngành</option>
           {categories.map((c) => <option key={c}>{c}</option>)}
         </select>
-        <div className="ml-auto flex items-center gap-2">{toolbarRight}</div>
       </div>
-
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-zinc-700">
-          <span className="font-medium tabular-nums">Đã chọn {selected.size}{hiddenSelected > 0 ? ` (${hiddenSelected} đang bị lọc ẩn)` : ''}</span>
-          <button type="button" onClick={copyNames} className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-white px-2.5 py-1 font-medium text-sky-800 hover:bg-sky-100">
-            {copiedN != null ? `Đã sao chép ${copiedN} tên` : 'Sao chép tên sản phẩm'}
-          </button>
-          {shown.length > visible.length && selected.size < shown.length && (
-            <button type="button" onClick={selectAllShown} className="rounded-md border border-zinc-200 bg-white px-2.5 py-1 hover:bg-zinc-50">Chọn tất cả {shown.length} dòng đang lọc</button>
-          )}
-          <button type="button" onClick={() => setSelected(new Set())} className="rounded-md border border-zinc-200 bg-white px-2.5 py-1 hover:bg-zinc-50">Bỏ chọn</button>
-        </div>
-      )}
 
       <div className="overflow-auto border border-zinc-200 rounded-lg bg-white max-h-[75vh]">
         <table className="text-xs border-separate border-spacing-0">
           <thead>
             <tr>
-              {columns.map((c) => (
+              {shownCols.map((c) => (
                 <th
                   key={c.key}
                   onClick={() => { setSort((s) => (s?.key === c.key ? (s.dir === 1 ? { key: c.key, dir: -1 } : null) : { key: c.key, dir: 1 })); setPage(0); }}
@@ -281,7 +338,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
           <tbody>
             {visible.map((r) => (
               <tr key={`${r.loai_dong}-${r.ref}`} className="group/row">
-                {columns.map((c) => {
+                {shownCols.map((c) => {
                   const text = fmt(c, r[c.key]);
                   const numeric = ['int', 'num1', 'num2', 'pct'].includes(c.type);
                   const isName = c.key === NAME_KEY;
@@ -349,14 +406,34 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
         </table>
       </div>
 
-      <div className="flex items-center justify-between gap-3 text-xs text-zinc-600">
-        <span className="tabular-nums">{shown.length ? `${cur * PAGE_SIZE + 1}–${Math.min((cur + 1) * PAGE_SIZE, shown.length)} / ${shown.length} dòng` : '0 dòng'}</span>
-        <div className="flex items-center gap-2">
+      {/* Hàng dưới: phân trang dồn hết về góc trái; cài đặt (bản dữ liệu, Cột, Làm mới, Xuất Excel, trợ giúp) ở góc phải. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-zinc-600">
+        <div className="flex flex-wrap items-center gap-2">
           <button type="button" className={pageBtn} disabled={cur === 0} onClick={() => setPage(cur - 1)}>← Trước</button>
           <span className="tabular-nums">Trang {cur + 1} / {pages}</span>
           <button type="button" className={pageBtn} disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>Sau →</button>
+          <span className="tabular-nums text-zinc-500">{shown.length ? `${cur * PAGE_SIZE + 1}–${Math.min((cur + 1) * PAGE_SIZE, shown.length)} / ${shown.length} dòng` : '0 dòng'}</span>
+        </div>
+        <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+          {settingsStart}
+          <ColumnPicker hidden={hidden} onToggle={toggleColumn} onReset={() => saveHidden(new Set(DEFAULT_HIDDEN))} onShowAll={() => saveHidden(new Set())} />
+          {settingsEnd}
         </div>
       </div>
+
+      {/* Thanh chọn nhiều dòng nằm dưới cùng, sau hàng phân trang và cài đặt. */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-zinc-700">
+          <span className="font-medium tabular-nums">Đã chọn {selected.size}{hiddenSelected > 0 ? ` (${hiddenSelected} đang bị lọc ẩn)` : ''}</span>
+          <button type="button" onClick={copyNames} className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-white px-2.5 py-1 font-medium text-sky-800 hover:bg-sky-100">
+            {copiedN != null ? `Đã sao chép ${copiedN} tên` : 'Sao chép tên sản phẩm'}
+          </button>
+          {shown.length > visible.length && selected.size < shown.length && (
+            <button type="button" onClick={selectAllShown} className="rounded-md border border-zinc-200 bg-white px-2.5 py-1 hover:bg-zinc-50">Chọn tất cả {shown.length} dòng đang lọc</button>
+          )}
+          <button type="button" onClick={() => setSelected(new Set())} className="rounded-md border border-zinc-200 bg-white px-2.5 py-1 hover:bg-zinc-50">Bỏ chọn</button>
+        </div>
+      )}
     </div>
   );
 }

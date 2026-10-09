@@ -34,9 +34,11 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
   rows = attachGate(attachLocal(attachSocial(rows, social), local)); // social và kiểm local đọc trực tiếp (không nằm trong bản chụp), ghép theo page_id Meta
   const products = rows.filter((r) => r.loai_dong === 'san_pham').length;
 
-  const toolbarLeft = (
-    <>
-      <h1 className="text-base font-semibold text-zinc-900">Bảng tổng hợp</h1>
+  // Tiêu đề ở thanh trên; bản dữ liệu, Cột, Làm mới, Xuất Excel, trợ giúp nằm ở góc dưới bên phải của bảng.
+  const toolbarLeft = <h1 className="text-base font-semibold text-zinc-900">Bảng tổng hợp</h1>;
+
+  const settingsStart = (
+    <div className="contents">
       {snaps.length > 0 && (
         <VersionSelect
           options={snaps.map((x, i) => ({ id: x.id, label: `${dmy(x.taken_on)} · #${x.id}${i === 0 ? ' · mới nhất' : ''}` }))}
@@ -52,11 +54,11 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
           Bản cũ · Tag, Đã xem, Social, Local là dữ liệu hiện tại
         </span>
       )}
-    </>
+    </div>
   );
 
-  const toolbarRight = (
-    <>
+  const settingsEnd = (
+    <div className="contents">
       <RefreshDataButton />
       {chosen && (
         <a
@@ -68,7 +70,7 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
           <Download className="w-3.5 h-3.5" /> Xuất Excel
         </a>
       )}
-      <HelpPopover label="Cách đọc và tổng hợp bảng này">
+      <HelpPopover label="Cách đọc và tổng hợp bảng này" placement="up">
         <p className="font-medium text-zinc-800">Dữ liệu của bản đang chọn</p>
         {chosen ? (
           <p>
@@ -110,8 +112,8 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
         </ol>
         <p>Số Topview là ước tính. Số ad Meta “mọi nước” là số ad đang chạy ở mọi quốc gia, cột AU/US ở cuối bảng chỉ tính từng nước; số advertiser và ad &gt;60 ngày tính trong mẫu ~30 ad đầu, không phải toàn bộ.</p>
       </HelpPopover>
-    </>
+    </div>
   );
 
-  return <PipelineTable rows={rows} initialTab={TAB_FROM_PARAM[nhom ?? ''] ?? 'tat-ca'} toolbarLeft={toolbarLeft} toolbarRight={toolbarRight} />;
+  return <PipelineTable rows={rows} initialTab={TAB_FROM_PARAM[nhom ?? ''] ?? 'tat-ca'} toolbarLeft={toolbarLeft} settingsStart={settingsStart} settingsEnd={settingsEnd} />;
 }
