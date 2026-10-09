@@ -3,18 +3,27 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import columns from '@/lib/research/pipeline-columns.json';
-import type { MetaPageRef, PipelineRow } from '@/lib/research/db';
+import type { LocalRef, MetaPageRef, PipelineRow, SocialRef } from '@/lib/research/db';
+import { pageLine, pageTone, PAGE_TONE_CLASS } from '@/lib/research/metaPages';
+import { socialLine, socialTitle } from '@/lib/research/social';
+import { localLine, localTitle } from '@/lib/research/local';
 import { ScoreHelp } from '@/components/research/ScoreHelp';
+import { CopyCommand } from '@/components/research/CopyCommand';
 import { adsLibraryPageUrl } from '@/lib/research/adsLibraryUrl';
 import { textToneOf, toneOf, TONE_CLASS } from '@/lib/research/pipeline-rules';
 
 type Col = (typeof columns)[number];
 const NAME_KEY = 'name_vi';
+const PAGE_SIZE = 10;
 // Nền theo nhóm cột (khóa `tint` trong pipeline-columns.json): Amazon xanh lá, Meta Ads vàng.
 const TINT_HEAD: Record<string, string> = { amazon: 'bg-green-100', meta: 'bg-yellow-100' };
 const TINT_CELL: Record<string, string> = { amazon: 'bg-green-50', meta: 'bg-yellow-50' };
 
 export type GroupTab = 'tat-ca' | 'theo-doi' | 'loai' | 'chua-tag';
+// Lọc phụ trong tab Chưa tag: đã xem (có reviewed_on, do lệnh seen ghi) hay chưa xem.
+type SeenFilter = 'all' | 'unseen' | 'seen';
+const isSeen = (r: PipelineRow) => !!r.reviewed_on;
+const dmShort = (iso: unknown) => (typeof iso === 'string' && iso.length >= 10 ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '');
 
 // Chỉ có 2 tag do người dùng đặt (cột `nhom` trong view): Theo dõi và Loại. Chưa tag thì để trống.
 type Tag = 'theo_doi' | 'loai' | null;
@@ -39,22 +48,51 @@ function fmt(col: Col, v: unknown): string {
 }
 
 const adsLibrary = adsLibraryPageUrl;
-// Page đã quét riêng: "tên: ad đang chạy/tổng - năm tạo". Page chỉ thấy trong mẫu quét keyword: "tên: n ad trong mẫu" (hoặc chỉ tên).
-const pageLine = (p: MetaPageRef) =>
-  p.a == null && p.t == null ? `${p.n}${p.s != null ? `: ${p.s} ad trong mẫu` : ''}` : `${p.n}: ${p.a ?? '?'}/${p.t ?? '?'}${p.y ? ` - ${p.y}` : ''}`;
 const csvCell = (s: string) => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
 
 function MetaPages({ pages, fallback }: { pages: MetaPageRef[] | null | undefined; fallback: string }) {
   if (!pages?.length) return fallback ? <span className="whitespace-pre-line">{fallback}</span> : <span className="text-zinc-300">—</span>;
   return (
     <ul className="space-y-0.5">
-      {pages.map((p, i) => (
-        <li key={`${p.id}-${i}`}>
-          {/^\d+$/.test(p.id) ? (
-            <a href={adsLibrary(p.id)} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline" title="Mở Ads Library của page này">{pageLine(p)}</a>
-          ) : (
-            pageLine(p)
-          )}
+      {pages.map((p, i) => {
+        // Chữ đen mặc định; đỏ nếu ad đang chạy / tổng < 30%, xanh nếu > 80% (chỉ page đã quét riêng mới có số).
+        const cls = PAGE_TONE_CLASS[pageTone(p) ?? 'none'];
+        return (
+          <li key={`${p.id}-${i}`} className={cls}>
+            {/^\d+$/.test(p.id) ? (
+              <a href={adsLibrary(p.id)} target="_blank" rel="noreferrer" className="hover:underline" title="Mở Ads Library của page này">{pageLine(p)}</a>
+            ) : (
+              pageLine(p)
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+/** Cột Local brand check: một dòng cho mỗi page Meta, cùng thứ tự với cột Meta pages (— nếu chưa kiểm). Rê chuột xem nơi gửi hàng, pháp nhân, độ tin cậy. */
+function LocalPages({ refs }: { refs: LocalRef[] | null | undefined }) {
+  if (!refs?.length) return <span className="text-zinc-300">—</span>;
+  return (
+    <ul className="space-y-0.5">
+      {refs.map((x, i) => (
+        <li key={`${x.id}-${i}`} title={localTitle(x)} className={x.model ? 'text-zinc-900' : 'text-zinc-300'}>
+          {localLine(x)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Cột Social đối thủ: một dòng cho mỗi page Meta, cùng thứ tự với cột Meta pages (— nếu chưa quét social). */
+function SocialPages({ refs }: { refs: SocialRef[] | null | undefined }) {
+  if (!refs?.length) return <span className="text-zinc-300">—</span>;
+  return (
+    <ul className="space-y-0.5">
+      {refs.map((x, i) => (
+        <li key={`${x.id}-${i}`} title={socialTitle(x)} className={x.fb || x.ig || x.tt ? 'text-zinc-900' : 'text-zinc-300'}>
+          {socialLine(x)}
         </li>
       ))}
     </ul>
@@ -66,12 +104,17 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
   const [q, setQ] = useState('');
   const [category, setCategory] = useState('');
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
+  const [seenFilter, setSeenFilter] = useState<SeenFilter>('all');
+  const [selected, setSelected] = useState<Set<string>>(new Set()); // dòng đã chọn (giữ khi đổi trang, lọc, sắp xếp)
+  const [copiedN, setCopiedN] = useState<number | null>(null);
+  const [page, setPage] = useState(0); // phân trang 10 dòng; về trang đầu khi đổi nhóm, tìm kiếm, ngành, sắp xếp
 
   const counts = useMemo(() => {
-    const c = { theo_doi: 0, loai: 0, none: 0 };
+    const c = { theo_doi: 0, loai: 0, none: 0, seen: 0, unseen: 0 };
     for (const r of rows) {
       const t = tagOf(r);
       c[t ?? 'none']++;
+      if (!t) c[isSeen(r) ? 'seen' : 'unseen']++; // chỉ đếm trong nhóm chưa tag
     }
     return c;
   }, [rows]);
@@ -79,7 +122,15 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
 
   const switchTab = (t: GroupTab) => {
     setTab(t);
-    try { window.history.replaceState(null, '', t === 'tat-ca' ? '/market-research/pipeline' : `/market-research/pipeline?nhom=${t}`); } catch { /* không bắt buộc */ }
+    setSeenFilter('all');
+    setPage(0);
+    try {
+      // Giữ các tham số khác (đặc biệt v = bản dữ liệu đang xem), chỉ đổi nhom.
+      const params = new URLSearchParams(window.location.search);
+      if (t === 'tat-ca') params.delete('nhom'); else params.set('nhom', t);
+      const qs = params.toString();
+      window.history.replaceState(null, '', `/market-research/pipeline${qs ? `?${qs}` : ''}`);
+    } catch { /* không bắt buộc */ }
   };
 
   const shown = useMemo(() => {
@@ -87,6 +138,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
     let out = rows.filter(
       (r) =>
         (tab === 'tat-ca' || tagOf(r) === TAB_TAG[tab]) &&
+        (tab !== 'chua-tag' || seenFilter === 'all' || (seenFilter === 'seen') === isSeen(r)) &&
         (!category || r.category === category) &&
         (!needle || `${r.name_vi} ${r.keyword ?? ''} ${r.ref ?? ''}`.toLowerCase().includes(needle)),
     );
@@ -103,9 +155,37 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
       return tag(a) - tag(b) || num(b.diem_tiem_nang) - num(a.diem_tiem_nang) || num(b.au_searches) - num(a.au_searches) || num(b.meta_au_active_ads) - num(a.meta_au_active_ads);
     });
     return out;
-  }, [rows, tab, q, category, sort]);
+  }, [rows, tab, q, category, sort, seenFilter]);
 
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const cur = Math.min(page, pages - 1);
+  const visible = shown.slice(cur * PAGE_SIZE, (cur + 1) * PAGE_SIZE);
+  const pageBtn = 'text-xs border border-zinc-200 rounded-md px-2.5 py-1 bg-white text-zinc-700 hover:bg-zinc-50 disabled:opacity-40 disabled:hover:bg-white';
   const sel = 'text-xs border border-zinc-200 rounded-md px-2 py-1 bg-white';
+
+  // Chọn nhiều dòng: khoá = loai_dong:ref. Sao chép tên theo thứ tự đang hiển thị (dòng đã chọn nhưng đang bị lọc ẩn xếp sau cùng).
+  const keyOf = (r: PipelineRow) => `${r.loai_dong}:${r.ref}`;
+  const toggleRow = (r: PipelineRow) => setSelected((prev) => { const n = new Set(prev); const k = keyOf(r); if (n.has(k)) n.delete(k); else n.add(k); return n; });
+  const visibleKeys = visible.map(keyOf);
+  const allVisible = visible.length > 0 && visibleKeys.every((k) => selected.has(k));
+  const someVisible = visibleKeys.some((k) => selected.has(k));
+  const togglePage = () => setSelected((prev) => { const n = new Set(prev); if (allVisible) visibleKeys.forEach((k) => n.delete(k)); else visibleKeys.forEach((k) => n.add(k)); return n; });
+  const selectAllShown = () => setSelected((prev) => { const n = new Set(prev); shown.forEach((r) => n.add(keyOf(r))); return n; });
+  const hiddenSelected = [...selected].filter((k) => !shown.some((r) => keyOf(r) === k)).length;
+  const copyNames = async () => {
+    const shownSel = shown.filter((r) => selected.has(keyOf(r)));
+    const shownKeys = new Set(shownSel.map(keyOf));
+    const rest = rows.filter((r) => selected.has(keyOf(r)) && !shownKeys.has(keyOf(r)));
+    const names = [...shownSel, ...rest].map((r) => String(r.name_vi ?? '')).filter(Boolean);
+    const text = names.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedN(names.length);
+      setTimeout(() => setCopiedN(null), 2000);
+    } catch {
+      window.prompt('Copy tên sản phẩm:', text);
+    }
+  };
   const tabs: { key: GroupTab; label: string; n: number; hint: string }[] = [
     { key: 'tat-ca', label: 'Tất cả', n: rows.length, hint: 'Mọi sản phẩm đã quét' },
     { key: 'theo-doi', label: 'Theo dõi', n: counts.theo_doi, hint: 'Sản phẩm bạn đã tag Theo dõi' },
@@ -131,13 +211,43 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
             </button>
           ))}
         </nav>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Tìm tên, keyword, mã…" className={`${sel} w-48`} />
-        <select value={category} onChange={(e) => setCategory(e.target.value)} className={sel}>
+        {tab === 'chua-tag' && (
+          <div className="flex items-center gap-1 text-xs" role="group" aria-label="Lọc theo đã xem">
+            <span className="text-zinc-400">Trong chưa tag:</span>
+            {([['all', 'Tất cả', counts.none], ['unseen', 'Chưa xem', counts.unseen], ['seen', 'Đã xem', counts.seen]] as const).map(([k, label, n]) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => { setSeenFilter(k); setPage(0); }}
+                aria-pressed={seenFilter === k}
+                title={k === 'seen' ? 'Đã dùng lệnh seen (có ngày xem), chưa tag' : k === 'unseen' ? 'Chưa tag và chưa xem' : 'Mọi mục chưa tag'}
+                className={`px-2 py-0.5 rounded-md border whitespace-nowrap ${seenFilter === k ? 'bg-zinc-900 text-white border-zinc-900' : 'bg-white text-zinc-600 border-zinc-200 hover:bg-zinc-50'}`}
+              >
+                {label} <span className={`tabular-nums ${seenFilter === k ? 'text-zinc-300' : 'text-zinc-400'}`}>{n}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <input value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }} placeholder="Tìm tên, keyword, mã…" className={`${sel} w-48`} />
+        <select value={category} onChange={(e) => { setCategory(e.target.value); setPage(0); }} className={sel}>
           <option value="">Mọi ngành</option>
           {categories.map((c) => <option key={c}>{c}</option>)}
         </select>
         <div className="ml-auto flex items-center gap-2">{toolbarRight}</div>
       </div>
+
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs text-zinc-700">
+          <span className="font-medium tabular-nums">Đã chọn {selected.size}{hiddenSelected > 0 ? ` (${hiddenSelected} đang bị lọc ẩn)` : ''}</span>
+          <button type="button" onClick={copyNames} className="inline-flex items-center gap-1.5 rounded-md border border-sky-300 bg-white px-2.5 py-1 font-medium text-sky-800 hover:bg-sky-100">
+            {copiedN != null ? `Đã sao chép ${copiedN} tên` : 'Sao chép tên sản phẩm'}
+          </button>
+          {shown.length > visible.length && selected.size < shown.length && (
+            <button type="button" onClick={selectAllShown} className="rounded-md border border-zinc-200 bg-white px-2.5 py-1 hover:bg-zinc-50">Chọn tất cả {shown.length} dòng đang lọc</button>
+          )}
+          <button type="button" onClick={() => setSelected(new Set())} className="rounded-md border border-zinc-200 bg-white px-2.5 py-1 hover:bg-zinc-50">Bỏ chọn</button>
+        </div>
+      )}
 
       <div className="overflow-auto border border-zinc-200 rounded-lg bg-white max-h-[75vh]">
         <table className="text-xs border-separate border-spacing-0">
@@ -146,19 +256,31 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
               {columns.map((c) => (
                 <th
                   key={c.key}
-                  onClick={() => setSort((s) => (s?.key === c.key ? (s.dir === 1 ? { key: c.key, dir: -1 } : null) : { key: c.key, dir: 1 }))}
+                  onClick={() => { setSort((s) => (s?.key === c.key ? (s.dir === 1 ? { key: c.key, dir: -1 } : null) : { key: c.key, dir: 1 })); setPage(0); }}
                   className={`sticky top-0 ${TINT_HEAD[(c as { tint?: string }).tint ?? ''] ?? 'bg-zinc-100'} border-b border-zinc-200 px-2 py-2 text-left font-medium text-zinc-600 cursor-pointer select-none align-bottom ${c.key === NAME_KEY ? 'left-0 z-30 border-r' : 'z-20'}`}
                   style={{ minWidth: c.w, maxWidth: 'maxw' in c ? c.maxw : undefined }}
                   title="Bấm để sắp xếp"
                 >
+                  {c.key === NAME_KEY && (
+                    <input
+                      type="checkbox"
+                      aria-label="Chọn tất cả dòng trên trang này"
+                      title="Chọn / bỏ chọn cả trang này"
+                      className="mr-2 align-middle accent-sky-600"
+                      checked={allVisible}
+                      ref={(el) => { if (el) el.indeterminate = someVisible && !allVisible; }}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={togglePage}
+                    />
+                  )}
                   {c.label}{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}{c.key === 'diem_tiem_nang' && <ScoreHelp />}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {shown.map((r) => (
-              <tr key={`${r.loai_dong}-${r.ref}`}>
+            {visible.map((r) => (
+              <tr key={`${r.loai_dong}-${r.ref}`} className="group/row">
                 {columns.map((c) => {
                   const text = fmt(c, r[c.key]);
                   const numeric = ['int', 'num1', 'num2', 'pct'].includes(c.type);
@@ -166,19 +288,43 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
                   let body: React.ReactNode;
                   if (isName) {
                     body = (
-                      <Link
-                        href={r.loai_dong === 'san_pham' ? `/market-research/p/${r.ref}` : `/market-research/discover/${r.ref}`}
-                        className="text-blue-700 hover:underline underline-offset-2"
-                        title="Mở chi tiết sản phẩm"
-                      >
-                        {text}
-                      </Link>
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Chọn ${text}`}
+                          className="mt-0.5 shrink-0 accent-sky-600"
+                          checked={selected.has(keyOf(r))}
+                          onChange={() => toggleRow(r)}
+                        />
+                        <Link
+                          href={r.loai_dong === 'san_pham' ? `/market-research/p/${r.ref}` : `/market-research/discover/${r.ref}`}
+                          className="text-blue-700 hover:underline underline-offset-2"
+                          title="Mở chi tiết sản phẩm"
+                        >
+                          {text}
+                          {isSeen(r) && (
+                            <span className="ml-1.5 align-middle inline-block px-1 py-px rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-normal whitespace-nowrap" title={typeof r.review_note === 'string' && r.review_note ? r.review_note : 'Đã xem'}>
+                              ✓ {dmShort(r.reviewed_on)}
+                            </span>
+                          )}
+                        </Link>
+                        {/* Copy lệnh để dán vào Claude: Phân tích (đánh giá chi tiết, chỉ đọc) và Seen (đánh dấu đã xem, gõ thêm ghi chú 1 dòng). Sản phẩm: mã slug; ứng viên: id.
+                            Nằm đè ở góc dưới ô tên, chỉ hiện khi rê chuột vào dòng (không chiếm chỗ của tên). */}
+                        <div className="absolute bottom-1 left-2 z-10 flex items-center gap-1 opacity-0 pointer-events-none group-hover/row:opacity-100 group-hover/row:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
+                          <CopyCommand compact label="Phân tích" command={`/dropship-research analyze ${r.ref} `} className="shadow-sm" />
+                          <CopyCommand compact label="Seen" command={`/dropship-research seen ${r.ref} `} className="shadow-sm" />
+                        </div>
+                      </div>
                     );
                   } else if (c.key === 'nhom') {
                     const t = tagOf(r);
                     body = t ? <span className={`inline-block px-1.5 py-0.5 rounded border text-[11px] ${TAG_CLS[t]}`}>{TAG_LABEL[t]}</span> : null;
                   } else if (c.key === 'meta_pages') {
                     body = <MetaPages pages={r.meta_pages_json as MetaPageRef[] | null | undefined} fallback={text} />;
+                  } else if (c.key === 'local_brand_check') {
+                    body = <LocalPages refs={r.local_json as LocalRef[] | null | undefined} />;
+                  } else if (c.key === 'competitor_social') {
+                    body = <SocialPages refs={r.social_json as SocialRef[] | null | undefined} />;
                   } else if (c.type === 'url' && text) {
                     body = <a href={text} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">Mở video</a>;
                   } else {
@@ -190,7 +336,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
                       key={c.key}
                       style={'maxw' in c ? { maxWidth: c.maxw } : undefined}
                       className={`border-b border-zinc-100 px-2 py-1.5 align-top ${TINT_CELL[(c as { tint?: string }).tint ?? ''] ?? ''} ${numeric ? 'text-right tabular-nums' : 'whitespace-pre-line'} ${
-                        isName ? 'sticky left-0 z-10 bg-white border-r font-medium' : ''
+                        isName ? `sticky left-0 z-10 ${selected.has(keyOf(r)) ? 'bg-sky-50' : 'bg-white'} border-r font-medium` : ''
                       }`}
                     >
                       {body}
@@ -201,6 +347,15 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, toolba
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center justify-between gap-3 text-xs text-zinc-600">
+        <span className="tabular-nums">{shown.length ? `${cur * PAGE_SIZE + 1}–${Math.min((cur + 1) * PAGE_SIZE, shown.length)} / ${shown.length} dòng` : '0 dòng'}</span>
+        <div className="flex items-center gap-2">
+          <button type="button" className={pageBtn} disabled={cur === 0} onClick={() => setPage(cur - 1)}>← Trước</button>
+          <span className="tabular-nums">Trang {cur + 1} / {pages}</span>
+          <button type="button" className={pageBtn} disabled={cur >= pages - 1} onClick={() => setPage(cur + 1)}>Sau →</button>
+        </div>
       </div>
     </div>
   );

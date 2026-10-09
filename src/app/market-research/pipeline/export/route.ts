@@ -2,9 +2,13 @@ import ExcelJS from 'exceljs';
 import columns from '@/lib/research/pipeline-columns.json';
 import { adsLibraryPageUrl } from '@/lib/research/adsLibraryUrl';
 import { textToneOf, toneOf, TONE_ARGB } from '@/lib/research/pipeline-rules';
-import { getPipelineSnapshots, getPipelineTags, getSnapshotRows, type MetaPageRef, type PipelineRow } from '@/lib/research/db';
+import { getPipelineLocal, getPipelineSnapshots, getPipelineSocial, getPipelineTags, getSnapshotRows, type MetaPageRef, type PipelineRow } from '@/lib/research/db';
+import { attachSocial } from '@/lib/research/social';
+import { attachLocal } from '@/lib/research/local';
+import { attachGate } from '@/lib/research/gate';
+import { pageLine, pageTone, PAGE_TONE_ARGB } from '@/lib/research/metaPages';
 
-// Xuất bảng tổng hợp ra Excel: bản dữ liệu đang chọn (?v=<id>, mặc định bản đang dùng), gắn tag hiện tại. Không lưu file ở đâu cả.
+// Xuất bảng tổng hợp ra Excel: bản dữ liệu đang chọn (?v=<id>, mặc định bản mới nhất), gắn tag hiện tại. Không lưu file ở đâu cả.
 export const dynamic = 'force-dynamic';
 
 const TAG_LABEL: Record<string, string> = { theo_doi: 'Theo dõi', loai: 'Loại' };
@@ -12,24 +16,24 @@ const TAG_RANK: Record<string, number> = { theo_doi: 0, loai: 2 };
 const TINT_HEAD: Record<string, string> = { amazon: 'FFDCFCE7', meta: 'FFFEF9C3' };
 const TINT_CELL: Record<string, string> = { amazon: 'FFF0FDF4', meta: 'FFFEFCE8' };
 const NUMFMT: Record<string, string> = { int: '#,##0', num1: '0.0', num2: '0.00', pct: '0.0%' };
-const WRAP = new Set(['meta_pages', 'reason', 'meta_au_top', 'meta_au_top2', 'meta_us_top2', 'tt_top_item', 'cluster']);
+const WRAP = new Set(['meta_pages', 'competitor_social', 'local_brand_check', 'reason', 'meta_au_top', 'meta_au_top2', 'meta_us_top2', 'tt_top_item', 'cluster']);
 const adsLibrary = adsLibraryPageUrl;
 
 export async function GET(request: Request) {
   const v = new URL(request.url).searchParams.get('v');
-  const [snaps, tags] = await Promise.all([getPipelineSnapshots(), getPipelineTags()]);
-  const published = snaps.find((s) => s.status === 'published');
-  const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? published;
+  const [snaps, tags, social, local] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineSocial(), getPipelineLocal()]);
+  const latest = snaps[0]; // getPipelineSnapshots sắp theo id giảm dần: bản mới nhất là mặc định
+  const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? latest;
   if (!chosen) return new Response('Chưa có bản dữ liệu nào để xuất.', { status: 404 });
 
-  const rows: PipelineRow[] = (await getSnapshotRows(chosen.id)).map((r) => ({ ...r.row, nhom: tags.get(r.key) ?? null }));
+  const rows: PipelineRow[] = attachGate(attachLocal(attachSocial((await getSnapshotRows(chosen.id)).map((r) => ({ ...r.row, nhom: tags.get(r.key) ?? null })), social), local));
   const num = (x: unknown) => (typeof x === 'number' ? x : -1);
   rows.sort((a, b) => (TAG_RANK[String(a.nhom)] ?? 1) - (TAG_RANK[String(b.nhom)] ?? 1) || num(b.au_searches) - num(a.au_searches) || String(a.name_vi).localeCompare(String(b.name_vi), 'vi'));
   const nProd = rows.filter((r) => r.loai_dong === 'san_pham').length;
 
   const wb = new ExcelJS.Workbook();
   const ws = wb.addWorksheet('Pipeline', { views: [{ state: 'frozen', xSplit: 1, ySplit: 1 }] });
-  ws.addRow([...columns.map((c) => c.label.replace(' (bấm để mở Ads Library)', " — link ở sheet 'Meta pages (link)'"))]);
+  ws.addRow([...columns.map((c) => c.label.replace(', bấm để mở Ads Library)', "; link ở sheet 'Meta pages (link)')"))]);
   const head = ws.getRow(1);
   head.height = 62;
   head.eachCell((c, n) => {
@@ -55,6 +59,12 @@ export async function GET(request: Request) {
       const tone = c.type in NUMFMT ? toneOf(c.key, r[c.key]) : textToneOf(c.key, r[c.key]);
       if (tone) cell.font = { bold: true, color: { argb: TONE_ARGB[tone] } };
     });
+    // Cột Meta pages: mỗi dòng page một màu (mặc định đen, đỏ nếu active/tổng < 30%, xanh nếu > 80%).
+    const pages = (r.meta_pages_json as MetaPageRef[] | null | undefined) ?? [];
+    const mj = columns.findIndex((c) => c.key === 'meta_pages');
+    if (pages.length && mj >= 0) {
+      row.getCell(mj + 1).value = { richText: pages.map((p, i) => ({ text: pageLine(p) + (i < pages.length - 1 ? '\n' : ''), font: { color: { argb: PAGE_TONE_ARGB[pageTone(p) ?? 'none'] } } })) };
+    }
   });
   columns.forEach((c, j) => { ws.getColumn(j + 1).width = Math.max(8, Math.round(c.w / 7)); });
   ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: columns.length } };
@@ -91,7 +101,7 @@ export async function GET(request: Request) {
   note.getColumn(1).font = { bold: true };
 
   const buf = await wb.xlsx.writeBuffer();
-  const name = `pipeline-san-pham-${chosen.taken_on}${chosen.id !== published?.id ? `-ban${chosen.id}` : ''}.xlsx`;
+  const name = `pipeline-san-pham-${chosen.taken_on}${chosen.id !== latest?.id ? `-ban${chosen.id}` : ''}.xlsx`;
   return new Response(new Uint8Array(buf as ArrayBuffer), {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

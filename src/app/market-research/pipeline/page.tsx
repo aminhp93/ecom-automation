@@ -1,7 +1,11 @@
-import { getPipelineSheet, getPipelineSnapshots, getPipelineTags, getSnapshotRows, type PipelineRow } from '@/lib/research/db';
+import { getPipelineReviews, getPipelineSheet, getPipelineSnapshots, getPipelineLocal, getPipelineSocial, getPipelineTags, getSnapshotRows, type PipelineRow } from '@/lib/research/db';
+import { attachSocial } from '@/lib/research/social';
+import { attachLocal } from '@/lib/research/local';
+import { attachGate } from '@/lib/research/gate';
 import { PipelineTable, type GroupTab } from '@/components/research/PipelineTable';
 import { HelpPopover } from '@/components/research/HelpPopover';
 import { VersionSelect } from '@/components/research/VersionSelect';
+import { RefreshDataButton } from '@/components/research/RefreshDataButton';
 import { Download } from 'lucide-react';
 import columns from '@/lib/research/pipeline-columns.json';
 import { RULES, SCORE_CRITERIA, SCORE_INTRO, TEXT_RULES } from '@/lib/research/pipeline-rules';
@@ -11,23 +15,23 @@ const TAB_FROM_PARAM: Record<string, GroupTab> = { 'theo-doi': 'theo-doi', loai:
 
 const dm = (iso?: string | null) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}` : '—');
 const dmy = (iso?: string | null) => (iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : '—');
-const STATUS_LABEL: Record<string, string> = { published: 'đang dùng', draft: 'nháp', rejected: 'từ chối', superseded: 'bản cũ' };
 const SRC_LABEL: Record<string, string> = { amazon: 'Amazon', trends: 'Trends', tiktok: 'TikTok', meta_keyword: 'Meta ads', meta_au: 'Meta AU', meta_us: 'Meta US', meta_pages: 'Page đối thủ', discover: 'Quét ý tưởng' };
 
 export default async function PipelineSheetPage({ searchParams }: { searchParams: Promise<{ nhom?: string; v?: string }> }) {
   const { nhom, v } = await searchParams;
-  const [snaps, tags] = await Promise.all([getPipelineSnapshots(), getPipelineTags()]);
-  const published = snaps.find((s) => s.status === 'published');
-  const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? published;
+  const [snaps, tags, reviews, social, local] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineReviews(), getPipelineSocial(), getPipelineLocal()]);
+  const latest = snaps[0]; // getPipelineSnapshots sắp theo id giảm dần; DB chỉ giữ 10 bản mới nhất
+  const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? latest;
 
-  // Bảng hiển thị = bản chụp đang dùng (hoặc bản được chọn xem), gắn tag hiện tại. Chưa có bản chụp thì đọc trực tiếp.
+  // Bảng hiển thị = bản chụp mới nhất (hoặc bản được chọn xem), gắn tag hiện tại. Chưa có bản chụp thì đọc trực tiếp.
   let rows: PipelineRow[];
   if (chosen) {
     const snapRows = await getSnapshotRows(chosen.id);
-    rows = snapRows.map((r) => ({ ...r.row, nhom: tags.get(r.key) ?? null }));
+    rows = snapRows.map((r) => ({ ...r.row, nhom: tags.get(r.key) ?? null, reviewed_on: reviews.get(r.key)?.reviewed_on ?? null, review_note: reviews.get(r.key)?.review_note ?? null }));
   } else {
-    rows = await getPipelineSheet();
+    rows = (await getPipelineSheet()).map((r) => ({ ...r, reviewed_on: reviews.get(`${r.loai_dong}:${r.ref}`)?.reviewed_on ?? null, review_note: reviews.get(`${r.loai_dong}:${r.ref}`)?.review_note ?? null }));
   }
+  rows = attachGate(attachLocal(attachSocial(rows, social), local)); // social và kiểm local đọc trực tiếp (không nằm trong bản chụp), ghép theo page_id Meta
   const products = rows.filter((r) => r.loai_dong === 'san_pham').length;
 
   const toolbarLeft = (
@@ -35,19 +39,28 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
       <h1 className="text-base font-semibold text-zinc-900">Bảng tổng hợp</h1>
       {snaps.length > 0 && (
         <VersionSelect
-          options={snaps.map((x) => ({ id: x.id, label: `${dmy(x.taken_on)} · #${x.id} · ${STATUS_LABEL[x.status] ?? x.status}` }))}
+          options={snaps.map((x, i) => ({ id: x.id, label: `${dmy(x.taken_on)} · #${x.id}${i === 0 ? ' · mới nhất' : ''}` }))}
           current={chosen?.id ?? null}
-          publishedId={published?.id ?? null}
+          latestId={latest?.id ?? null}
         />
+      )}
+      {chosen && latest && chosen.id !== latest.id && (
+        <span
+          className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-1.5 py-0.5"
+          title="Số liệu các cột Amazon, Trends, TikTok, Meta, Điểm lấy theo bản chụp. Tag, Đã xem, Social đối thủ và Local brand check luôn là dữ liệu hiện tại."
+        >
+          Bản cũ · Tag, Đã xem, Social, Local là dữ liệu hiện tại
+        </span>
       )}
     </>
   );
 
   const toolbarRight = (
     <>
+      <RefreshDataButton />
       {chosen && (
         <a
-          href={`/market-research/pipeline/export${chosen.id !== published?.id ? `?v=${chosen.id}` : ''}`}
+          href={`/market-research/pipeline/export${chosen.id !== latest?.id ? `?v=${chosen.id}` : ''}`}
           download
           title="Tải bản dữ liệu đang chọn (kèm tag hiện tại) ra file Excel"
           className="inline-flex items-center gap-1 text-xs border border-zinc-200 rounded-md px-2 py-1 bg-white hover:bg-zinc-50 text-zinc-700"
@@ -70,8 +83,8 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
           <li><b>Danh sách:</b> {products} sản phẩm cộng ứng viên từ lần quét ý tưởng hằng tuần.</li>
           <li><b>Kéo số liệu thô</b> (mỗi lần một bản chụp có ngày, không ghi đè): Amazon AU/US/UK, Google Trends US, TikTok Shop US, Meta Ads Library theo keyword (tất cả quốc gia, cộng riêng AU và US), page đối thủ. Bản #1–#5 chỉ có AU.</li>
           <li><b>Ghép bảng:</b> mỗi cột lấy số mới nhất của keyword chính. Ô trống (—) là chưa kiểm tra, không phải 0.</li>
-          <li><b>Chụp bảng</b> thành bản độc lập mỗi lần fetch. Bản mới là nháp; “đang dùng” là bản mặc định của web và nút Xuất Excel. Muốn dùng bản nháp, nhắn Claude “dùng bản #N”.</li>
-          <li><b>Tag</b> Theo dõi / Loại do bạn đặt, hiện ngay, không đi theo bản chụp.</li>
+          <li><b>Chụp bảng</b> thành bản độc lập mỗi lần fetch. Bản mới nhất là bản mặc định của web và nút Xuất Excel; chỉ giữ 10 bản gần nhất, bản cũ hơn tự xoá.</li>
+          <li><b>Tag</b> Theo dõi / Loại do bạn đặt, hiện ngay, không đi theo bản chụp. Cũng vậy với dấu Đã xem, cột Social đối thủ và Local brand check: khi xem bản cũ, các cột này vẫn là dữ liệu hiện tại.</li>
         </ol>
         <p className="font-medium text-zinc-800 pt-1">Màu số (ngưỡng đề xuất, sửa ở pipeline-rules.ts)</p>
         <ul className="space-y-0.5">

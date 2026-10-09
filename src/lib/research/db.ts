@@ -347,8 +347,13 @@ export const getOverview = () =>
   get<ProductOverview[]>('v_product_overview?select=*&order=score.desc.nullslast');
 
 /** Bảng phẳng giống sheet pipeline (view v_pipeline_sheet): sản phẩm + ứng viên discover chưa thành sản phẩm. */
-export interface MetaPageRef { n: string; id: string; a: number | null; t: number | null; y: string | null; s?: number | null }
-export type PipelineRow = Record<string, string | number | null | MetaPageRef[] | undefined>;
+export interface MetaPageRef { n: string; id: string; a: number | null; t: number | null; y: string | null; s?: number | null; m?: 'yes' | 'unverified' | null }
+/** Số liệu social của một page ở một nền tảng (từ competitor_social): last = số ngày từ bài/reel/video gần nhất, n30 = số bài trong 30 ngày (lb: ít nhất). */
+export interface SocialPlatform { last: number | null; n30: number | null; lb?: boolean; f: number | null; h: string | null; on: string }
+export interface SocialRef { id: string; n: string; fb?: SocialPlatform; ig?: SocialPlatform; tt?: SocialPlatform }
+/** Kết quả kiểm local / nước ngoài của một page (từ advertiser_business_checks): model, nơi gửi hàng, pháp nhân, người nổi tiếng (nếu có tín hiệu "Người nổi tiếng" mà giá trị bắt đầu bằng "Có"). */
+export interface LocalRef { id: string; n: string; model?: string; conf?: string | null; ships?: string | null; entity?: string | null; celeb?: string | null; on?: string }
+export type PipelineRow = Record<string, string | number | null | MetaPageRef[] | SocialRef[] | LocalRef[] | undefined>;
 export const getPipelineSheet = () =>
   get<PipelineRow[]>('v_pipeline_sheet?select=*&order=loai_dong.asc,score.desc.nullslast,ngay_quet.desc.nullslast');
 
@@ -371,6 +376,50 @@ export const getSnapshotRows = (id: number) =>
 export const getPipelineTags = async () => {
   const rows = await get<{ ref: string; loai_dong: string; nhom: string | null }[]>('v_pipeline_sheet?select=ref,loai_dong,nhom');
   return new Map(rows.map((r) => [`${r.loai_dong}:${r.ref}`, r.nhom]));
+};
+
+/** Social của page đối thủ (lệnh quét social ngày nào ghi ngày đó): lấy bản mới nhất theo page và nền tảng. Khoá = page_id Meta. */
+export const getPipelineSocial = async () => {
+  const rows = await get<{ page_id: string | null; platform: string; handle: string | null; followers: number | null; captured_on: string; detail: { last_post_days_ago?: number | null; posts_30d?: number | null; posts_30d_lower_bound?: boolean } | null }[]>(
+    'competitor_social?select=page_id,platform,handle,followers,captured_on,detail&page_id=not.is.null&relation=eq.brand&platform=in.(facebook,instagram,tiktok)&order=captured_on.desc&limit=2000',
+  );
+  const key = { facebook: 'fb', instagram: 'ig', tiktok: 'tt' } as const;
+  const m = new Map<string, { fb?: SocialPlatform; ig?: SocialPlatform; tt?: SocialPlatform }>();
+  for (const r of rows) {
+    const k = key[r.platform as keyof typeof key];
+    if (!r.page_id || !k) continue;
+    const cur = m.get(r.page_id) ?? {};
+    if (cur[k]) continue; // đã có bản mới hơn (sắp captured_on giảm dần)
+    cur[k] = { last: r.detail?.last_post_days_ago ?? null, n30: r.detail?.posts_30d ?? null, lb: r.detail?.posts_30d_lower_bound, f: r.followers, h: r.handle, on: r.captured_on };
+    m.set(r.page_id, cur);
+  }
+  return m;
+};
+
+/** Kiểm local / nước ngoài của page đối thủ: lấy kết quả mới nhất theo page. Khoá = page_id Meta. */
+export const getPipelineLocal = async () => {
+  const rows = await get<{ page_id: string; checked_on: string; model: string | null; confidence: string | null; ships_from: string | null; entity: string | null; signals: { signal?: string; value?: string }[] | null }[]>(
+    'advertiser_business_checks?select=page_id,checked_on,model,confidence,ships_from,entity,signals&order=checked_on.desc,id.desc&limit=2000',
+  );
+  const m = new Map<string, { model?: string; conf?: string | null; ships?: string | null; entity?: string | null; celeb?: string | null; on?: string }>();
+  for (const r of rows) {
+    if (!r.page_id || m.has(r.page_id) || !r.model) continue; // đã có bản mới hơn
+    const celeb = (r.signals ?? []).find((s) => s.signal === 'Người nổi tiếng' && /^có/i.test(s.value ?? ''))?.value ?? null;
+    m.set(r.page_id, { model: r.model, conf: r.confidence, ships: r.ships_from, entity: r.entity, celeb, on: r.checked_on });
+  }
+  return m;
+};
+
+/** Đánh dấu "đã xem" do người dùng đặt (lệnh seen): lấy trực tiếp, không nằm trong bản chụp. Khoá = loai_dong:ref (sản phẩm: slug, ứng viên: id). */
+export const getPipelineReviews = async () => {
+  const [prods, cands] = await Promise.all([
+    get<{ slug: string; reviewed_on: string; review_note: string | null }[]>('products?select=slug,reviewed_on,review_note&reviewed_on=not.is.null'),
+    get<{ id: number; reviewed_on: string; review_note: string | null }[]>('discovery_candidates?select=id,reviewed_on,review_note&reviewed_on=not.is.null'),
+  ]);
+  const m = new Map<string, { reviewed_on: string; review_note: string | null }>();
+  for (const r of prods) m.set(`san_pham:${r.slug}`, { reviewed_on: r.reviewed_on, review_note: r.review_note });
+  for (const r of cands) m.set(`ung_vien:${r.id}`, { reviewed_on: r.reviewed_on, review_note: r.review_note });
+  return m;
 };
 
 export const getSessions = () =>

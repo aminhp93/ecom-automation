@@ -12,16 +12,22 @@
   "w": 90
  },
  {
+  "key": "diem_chua_ro",
+  "label": "Chưa rõ (số tiêu chí/lọc cứng chưa có dữ liệu)",
+  "type": "int",
+  "w": 90
+ },
+ {
+  "key": "gate",
+  "label": "Cổng chốt (báo giá → unit economics → margin)",
+  "type": "text",
+  "w": 130
+ },
+ {
   "key": "nhom",
   "label": "Tag",
   "type": "group",
   "w": 80
- },
- {
-  "key": "meta_pages",
-  "label": "Meta pages: active/tổng - năm tạo page (bấm để mở Ads Library)",
-  "type": "text",
-  "w": 330
  },
  {
   "key": "reason",
@@ -29,6 +35,24 @@
   "type": "text",
   "w": 200,
   "maxw": 200
+ },
+ {
+  "key": "meta_pages",
+  "label": "Meta pages: active/tổng - năm tạo page (✓ = đã xác nhận đúng sản phẩm, bấm để mở Ads Library)",
+  "type": "text",
+  "w": 330
+ },
+ {
+  "key": "competitor_social",
+  "label": "Social đối thủ (cùng thứ tự Meta pages): FB, IG reel, TikTok = ngày từ bài gần nhất (số bài trong 30 ngày)",
+  "type": "text",
+  "w": 300
+ },
+ {
+  "key": "local_brand_check",
+  "label": "Local brand check (cùng thứ tự Meta pages): local Úc hay nước ngoài; ★ = người nổi tiếng",
+  "type": "text",
+  "w": 230
  },
  {
   "key": "meta_au_ads_n",
@@ -69,14 +93,14 @@
  },
  {
   "key": "meta_au_advertisers",
-  "label": "Meta Ads (mọi nước): số advertiser (trong mẫu)",
+  "label": "Meta Ads (mọi nước): số advertiser",
   "type": "int",
   "w": 70,
   "tint": "meta"
  },
  {
   "key": "meta_au_over60",
-  "label": "Meta Ads (mọi nước): ad chạy >60 ngày (trong mẫu)",
+  "label": "Meta Ads (mọi nước): ad chạy >60 ngày",
   "type": "int",
   "w": 70,
   "tint": "meta"

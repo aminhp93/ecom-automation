@@ -1,12 +1,13 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export interface VersionOption { id: number; label: string }
 
-/** Ô chọn bản dữ liệu (mỗi lần fetch một bản). Chọn bản đang dùng thì về URL gốc. */
-export function VersionSelect({ options, current, publishedId }: { options: VersionOption[]; current: number | null; publishedId: number | null }) {
+/** Ô chọn bản dữ liệu (mỗi lần fetch một bản, giữ 10 bản mới nhất). Chọn bản mới nhất thì bỏ tham số v; giữ nguyên tab (nhom) đang xem. */
+export function VersionSelect({ options, current, latestId }: { options: VersionOption[]; current: number | null; latestId: number | null }) {
   const router = useRouter();
+  const search = useSearchParams();
   return (
     <label className="inline-flex items-center" title="Bản dữ liệu (mỗi lần fetch một bản)">
       <select
@@ -14,7 +15,10 @@ export function VersionSelect({ options, current, publishedId }: { options: Vers
         value={current ?? ''}
         onChange={(e) => {
           const id = Number(e.target.value);
-          router.push(id === publishedId ? '/market-research/pipeline' : `/market-research/pipeline?v=${id}`, { scroll: false });
+          const params = new URLSearchParams(search.toString());
+          if (id === latestId) params.delete('v'); else params.set('v', String(id));
+          const qs = params.toString();
+          router.push(`/market-research/pipeline${qs ? `?${qs}` : ''}`, { scroll: false });
         }}
         className="text-[11px] border border-zinc-200 rounded-md px-1.5 py-0.5 bg-white text-zinc-700"
       >

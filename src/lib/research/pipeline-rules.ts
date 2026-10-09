@@ -73,7 +73,7 @@ export function textToneOf(key: string, value: unknown): Tone {
 
 // Cách tính "Điểm tiềm năng" (0–9): mỗi tiêu chí 1 điểm, thiếu dữ liệu thì 0 điểm. Logic thật nằm ở view v_pipeline_sheet (scripts/research/sql/2026-10-08_pipeline_score.sql).
 export const SCORE_INTRO =
-  'Chỉ chấm sản phẩm qua lọc cứng (không nặng, không pin/dễ vỡ/dao, chính sách và rủi ro siêu thị không Cao). Mỗi tiêu chí 1 điểm; thiếu dữ liệu thì 0 điểm, nên điểm thấp có thể do chưa kiểm tra.';
+  'Điểm chỉ để xếp thứ tự điều tra, chưa phải sẵn sàng chốt: chưa có biên lợi nhuận, báo giá hay kiểm tra đối thủ đủ. Chỉ chấm sản phẩm qua lọc cứng (không nặng, không pin/dễ vỡ/dao, chính sách và rủi ro siêu thị không Cao); lọc cứng chưa có dữ liệu vẫn được coi là qua, nên cột “Chưa rõ” đếm cả chúng. Mỗi tiêu chí 1 điểm; thiếu dữ liệu thì 0 điểm, nên điểm thấp có thể do chưa kiểm tra. Cột “Cổng chốt” cho biết đã có giá vốn về AU chưa.';
 export const SCORE_CRITERIA = [
   'Search Amazon AU ≥ 5.000/tháng',
   '≥ 100 ad AU đang chạy',
