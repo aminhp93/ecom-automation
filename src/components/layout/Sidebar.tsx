@@ -45,6 +45,9 @@ const CORE_STAGES = [
   { id: '06', name: '06 Creative Studio', shortName: 'Creative', icon: Film },
 ];
 
+// Các stage đang tắt (không bấm được, không vào được qua URL). Bật lại bằng cách bỏ id khỏi danh sách.
+const DISABLED_STAGES = ['02', '03', '04', '05'];
+
 // Roadmap V2 Stages (Expansion modules)
 const ROADMAP_STAGES = [
   { id: '07', name: '07 Advertising Setup', icon: Megaphone },
@@ -178,20 +181,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {CORE_STAGES.map((stage) => {
               const Icon = stage.icon;
               const isActive = currentStage === stage.id;
-              const status = getStageStatus(stage.id);
+              const isDisabled = DISABLED_STAGES.includes(stage.id);
+              const status = isDisabled ? 'locked' : getStageStatus(stage.id);
 
               return (
                 <button
                   key={stage.id}
                   onClick={() => onSelectStage(stage.id)}
-                  title={`${stage.name} • ${status === 'completed' ? 'Đã hoàn tất' : status === 'ready' ? 'Sẵn sàng' : 'Chưa mở khóa'}`}
-                  className={`relative w-full rounded-md transition-all flex items-center ${
+                  disabled={isDisabled}
+                  aria-disabled={isDisabled}
+                  title={isDisabled ? `${stage.name} • Đã tắt` : `${stage.name} • ${status === 'completed' ? 'Đã hoàn tất' : status === 'ready' ? 'Sẵn sàng' : 'Chưa mở khóa'}`}
+                  className={`relative w-full rounded-md transition-all flex items-center ${isDisabled ? 'cursor-not-allowed ' : ''}${
                     collapsed
                       ? 'justify-center p-2.5'
                       : 'justify-between px-2.5 py-2 text-left'
                   } ${
                     isActive
                       ? 'bg-zinc-900 text-white font-medium shadow-2xs'
+                      : isDisabled
+                      ? 'text-zinc-300 opacity-60'
                       : status === 'locked'
                       ? 'text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50/50 opacity-70'
                       : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'

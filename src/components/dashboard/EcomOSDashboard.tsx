@@ -12,7 +12,6 @@ import { Stage02ValidationView } from '@/components/stages/Stage02ValidationView
 import { Stage03CompetitorView } from '@/components/stages/Stage03CompetitorView';
 import { Stage04SupplierView } from '@/components/stages/Stage04SupplierView';
 import { Stage05OfferView } from '@/components/stages/Stage05OfferView';
-import { Stage06CreativeView } from '@/components/stages/Stage06CreativeView';
 import { AddCustomProductModal } from '@/components/discovery/AddCustomProductModal';
 import { AiTokenAuditModal } from '@/components/modals/AiTokenAuditModal';
 
@@ -26,6 +25,12 @@ export function EcomOSDashboard() {
   const searchParams = useSearchParams();
   const currentStage = searchParams.get('stage') ?? '';
   const setCurrentStage = useCallback((stage: string) => router.push(stage ? `/?stage=${stage}` : '/'), [router]);
+
+  // Stage 06 có trang riêng /creative-studio; stage 02–05 đang tắt nên mở bằng URL cũng quay về trang chủ.
+  useEffect(() => {
+    if (currentStage === '06') router.replace('/creative-studio');
+    else if (['02', '03', '04', '05'].includes(currentStage)) router.replace('/');
+  }, [currentStage, router]);
   const [products, setProducts] = useState<Product[]>([]);
   const [activeWorkingProductId, setActiveWorkingProductId] = useState<string>('');
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
@@ -194,7 +199,7 @@ export function EcomOSDashboard() {
       {/* 6-Stage Core V1 + Roadmap Sidebar */}
       <Sidebar
         currentStage={currentStage}
-        onSelectStage={(stage) => (stage === '01' ? router.push('/market-research') : setCurrentStage(stage))}
+        onSelectStage={(stage) => (stage === '01' ? router.push('/market-research') : stage === '06' ? router.push('/creative-studio') : setCurrentStage(stage))}
         activeProduct={activeWorkingProduct}
         stats={stats}
         providers={providers}
@@ -292,10 +297,7 @@ export function EcomOSDashboard() {
               />
             )}
 
-            {/* STAGE 06: Scene-based video builder */}
-            <div className={currentStage === '06' ? '' : 'hidden'}>
-              <Stage06CreativeView product={activeWorkingProduct} />
-            </div>
+            {/* STAGE 06 là trang riêng /creative-studio (tiến độ quy trình video). */}
 
             {/* STAGES 07 - 12: Planned Future Stages (Roadmap V2) */}
             {['07', '08', '09', '10', '11', '12'].includes(currentStage) && (
@@ -308,7 +310,7 @@ export function EcomOSDashboard() {
                   Giai đoạn này thuộc phần mở rộng (Meta Ads API Integration, Shopify Live Sync, và Autonomous Analytics Optimization) sau khi bạn hoàn tất kiểm thử bộ công cụ V1 (Stages 01 - 06).
                 </p>
                 <button
-                  onClick={() => setCurrentStage('06')}
+                  onClick={() => router.push('/creative-studio')}
                   className="mt-3 px-3 py-1.5 rounded-md bg-zinc-100 text-zinc-800 text-xs font-medium hover:bg-zinc-200 transition"
                 >
                   Quay lại Stage 06

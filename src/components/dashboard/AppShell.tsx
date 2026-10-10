@@ -28,8 +28,8 @@ export function AppShell({ currentStage, children }: { currentStage: string; chi
     <div className="flex h-screen bg-[#fafafa] text-zinc-900 overflow-hidden">
       <Sidebar
         currentStage={currentStage}
-        // Stage 01 là trang riêng; các stage còn lại hiển thị trong khung chính của trang chủ.
-        onSelectStage={(stage) => router.push(stage === '01' ? '/market-research' : `/?stage=${stage}`)}
+        // Stage 01 và 06 là trang riêng; các stage còn lại hiển thị trong khung chính của trang chủ.
+        onSelectStage={(stage) => router.push(stage === '01' ? '/market-research' : stage === '06' ? '/creative-studio' : `/?stage=${stage}`)}
         stats={stats}
         providers={providers}
         onOpenTokenAudit={() => setAuditOpen(true)}
