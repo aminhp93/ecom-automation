@@ -1,5 +1,6 @@
-import { OverviewContent } from '@/components/research/OverviewContent';
+import { redirect } from 'next/navigation';
 
-export default function ResearchOverviewPage() {
-  return <OverviewContent />;
+// Tab Tổng quan đã bỏ (10/10): vào Market Research là mở thẳng Bảng tổng hợp.
+export default function ResearchIndexPage() {
+  redirect('/market-research/pipeline');
 }

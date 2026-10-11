@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import columns from '@/lib/research/pipeline-columns.json';
 import type { LocalRef, MetaPageRef, PipelineRow, SocialRef } from '@/lib/research/db';
 import { pageLine, pageTone, PAGE_TONE_CLASS } from '@/lib/research/metaPages';
-import { socialLine, socialTitle } from '@/lib/research/social';
-import { localLine, localTitle } from '@/lib/research/local';
+import { socialLine, socialTitle, postsIn, socialState, followersText } from '@/lib/research/social';
+import { localLine, localTitle, MODEL_LABEL } from '@/lib/research/local';
 import { ScoreHelp } from '@/components/research/ScoreHelp';
 import { CopyCommand } from '@/components/research/CopyCommand';
 import { adsLibraryPageUrl } from '@/lib/research/adsLibraryUrl';
@@ -106,6 +106,64 @@ function SocialPages({ refs }: { refs: SocialRef[] | null | undefined }) {
   );
 }
 
+/** Cột đối thủ: nhóm 7 cột con, mỗi page đối thủ một dòng con trong dòng sản phẩm (các cột còn lại gộp dòng). Thay cho 3 cột text dài cũ. */
+const COMP_KEY = 'meta_pages';
+const COMP_FOLDED = ['competitor_social', 'local_brand_check'];
+const PLAT_COLS = ['Link', 'follower', 'bài 90d'];
+const COMP_HEADS: { label: string; title?: string }[] = [
+  { label: 'Page đối thủ', title: 'Meta pages tìm được; ✓ = đã xác nhận đúng sản phẩm. Bấm tên để mở Ads Library' },
+  { label: 'Ad active / tổng' },
+  { label: 'Năm tạo page' },
+  { label: 'Local check', title: '◌ = chưa kiểm' },
+  ...(['FB', 'IG', 'TT'] as const).flatMap((pf) => PLAT_COLS.map((c) => ({
+    label: `${pf} ${c}`,
+    title: c === 'Link' ? 'Link tài khoản tìm được (cần verify). ◌ chưa quét · ∅ đã quét, không có tài khoản' : c === 'bài 90d' ? 'Số bài trong khoảng ngày, tính tại lúc quét; ≥ là cận dưới (mẫu chưa chạm tới bài cũ hơn)' : undefined,
+  }))),
+];
+
+const UNSCANNED = <span className="text-zinc-400" title="Chưa quét">◌</span>;
+const NOACCOUNT = <span className="text-zinc-500" title="Đã quét: không có tài khoản">∅</span>;
+
+function PlatformCells({ p, cls }: { p?: Parameters<typeof socialState>[0]; cls: string }) {
+  const td = `bg-violet-50 px-2 py-1 align-top whitespace-nowrap tabular-nums ${cls}`;
+  const st = socialState(p);
+  if (st !== 'ok' || !p) {
+    const icon = st === 'none' ? NOACCOUNT : UNSCANNED;
+    return <>{PLAT_COLS.map((c) => <td key={c} className={`${td} text-center`}>{icon}</td>)}</>;
+  }
+  const cnt = (n: 90) => {
+    const v = postsIn(p, n);
+    return v ? `${v.lb ? '≥' : ''}${v.n}` : <span className="text-zinc-300" title="Chưa có số">?</span>;
+  };
+  return (
+    <>
+      <td className={td}>{p.u ? <a href={p.u} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline" title={p.u}>{p.h ? `@${p.h}` : 'mở'}</a> : <span className="text-zinc-300">?</span>}</td>
+      <td className={td} title={p.likes != null ? `${p.likes.toLocaleString('en-US')} like` : undefined}>{p.f != null ? followersText(p.f) : <span className="text-zinc-300">?</span>}</td>
+      <td className={td}>{cnt(90)}</td>
+    </>
+  );
+}
+
+function CompetitorCells({ p, s, l, cls }: { p: MetaPageRef; s?: SocialRef; l?: LocalRef; cls: string }) {
+  const td = `bg-violet-50 px-2 py-1 align-top whitespace-nowrap ${cls}`;
+  const dash = <span className="text-zinc-300">—</span>;
+  const tone = PAGE_TONE_CLASS[pageTone(p) ?? 'none'];
+  return (
+    <>
+      <td className={`${td} font-medium max-w-[120px] overflow-hidden text-ellipsis`} title={p.n}>
+        {/^\d+$/.test(p.id) ? <a href={adsLibrary(p.id)} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline" title={`${p.n} · mở Ads Library`}>{p.n}</a> : p.n}
+        {p.m === 'yes' ? <span className="ml-1 text-emerald-700" title="Đã xác nhận đúng sản phẩm">✓</span> : null}
+      </td>
+      <td className={`${td} tabular-nums ${tone}`}>{p.a != null || p.t != null ? `${p.a ?? '?'} / ${p.t ?? '?'}` : p.s != null ? `${p.s} ad (mẫu)` : dash}</td>
+      <td className={`${td} tabular-nums`}>{p.y ?? dash}</td>
+      <td className={td} title={l ? localTitle(l) : 'Chưa kiểm local'}>{l?.model ? <>{MODEL_LABEL[l.model] ?? l.model}{l.celeb ? ' ★' : ''}</> : UNSCANNED}</td>
+      <PlatformCells p={s?.fb} cls={cls} />
+      <PlatformCells p={s?.ig} cls={cls} />
+      <PlatformCells p={s?.tt} cls={cls} />
+    </>
+  );
+}
+
 /** Nút "Cột": bật/tắt từng cột của bảng. Cột tên sản phẩm luôn hiện. */
 function ColumnPicker({ hidden, onToggle, onReset, onShowAll }: { hidden: Set<string>; onToggle: (key: string) => void; onReset: () => void; onShowAll: () => void }) {
   const [open, setOpen] = useState(false);
@@ -118,7 +176,7 @@ function ColumnPicker({ hidden, onToggle, onReset, onShowAll }: { hidden: Set<st
     document.addEventListener('keydown', esc);
     return () => { document.removeEventListener('mousedown', close); document.removeEventListener('keydown', esc); };
   }, [open]);
-  const toggleable = columns.filter((c) => c.key !== NAME_KEY);
+  const toggleable = columns.filter((c) => c.key !== NAME_KEY && !COMP_FOLDED.includes(c.key));
   const shownCount = toggleable.filter((c) => !hidden.has(c.key)).length;
   return (
     <div ref={ref} className="relative">
@@ -178,7 +236,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
     try { window.localStorage.setItem(HIDDEN_STORAGE_KEY, JSON.stringify([...next])); } catch { /* không bắt buộc */ }
   };
   const toggleColumn = (key: string) => { const n = new Set(hidden); if (n.has(key)) n.delete(key); else n.add(key); saveHidden(n); };
-  const shownCols = useMemo(() => columns.filter((c) => c.key === NAME_KEY || !hidden.has(c.key)), [hidden]);
+  const shownCols = useMemo(() => columns.filter((c) => !COMP_FOLDED.includes(c.key) && (c.key === NAME_KEY || !hidden.has(c.key))), [hidden]);
 
   const counts = useMemo(() => {
     const c = { theo_doi: 0, loai: 0, none: 0, seen: 0, unseen: 0 };
@@ -268,7 +326,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
     <div className="space-y-2">
       {/* Một dòng duy nhất: tiêu đề, bản dữ liệu, nhóm, tìm kiếm, ngành, xuất Excel, trợ giúp */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        {toolbarLeft}
+        <Fragment>{toolbarLeft}</Fragment>
         <nav className="flex items-center gap-1" aria-label="Nhóm sản phẩm">
           {tabs.map((t) => (
             <button
@@ -310,7 +368,9 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
         <table className="text-xs border-separate border-spacing-0">
           <thead>
             <tr>
-              {shownCols.map((c) => (
+              {shownCols.map((c) => c.key === COMP_KEY ? COMP_HEADS.map((h, i) => (
+                <th key={`${c.key}-${i}`} title={h.title} className="sticky top-0 z-20 bg-violet-100 border-b border-zinc-200 px-2 py-2 text-left font-medium text-zinc-600 align-bottom whitespace-nowrap">{h.label}</th>
+              )) : (
                 <th
                   key={c.key}
                   onClick={() => { setSort((s) => (s?.key === c.key ? (s.dir === 1 ? { key: c.key, dir: -1 } : null) : { key: c.key, dir: 1 })); setPage(0); }}
@@ -336,72 +396,93 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
             </tr>
           </thead>
           <tbody>
-            {visible.map((r) => (
-              <tr key={`${r.loai_dong}-${r.ref}`} className="group/row">
-                {shownCols.map((c) => {
-                  const text = fmt(c, r[c.key]);
-                  const numeric = ['int', 'num1', 'num2', 'pct'].includes(c.type);
-                  const isName = c.key === NAME_KEY;
-                  let body: React.ReactNode;
-                  if (isName) {
-                    body = (
-                      <div className="flex items-start gap-2">
-                        <input
-                          type="checkbox"
-                          aria-label={`Chọn ${text}`}
-                          className="mt-0.5 shrink-0 accent-sky-600"
-                          checked={selected.has(keyOf(r))}
-                          onChange={() => toggleRow(r)}
-                        />
-                        <Link
-                          href={r.loai_dong === 'san_pham' ? `/market-research/p/${r.ref}` : `/market-research/discover/${r.ref}`}
-                          className="text-blue-700 hover:underline underline-offset-2"
-                          title="Mở chi tiết sản phẩm"
-                        >
-                          {text}
-                          {isSeen(r) && (
-                            <span className="ml-1.5 align-middle inline-block px-1 py-px rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-normal whitespace-nowrap" title={typeof r.review_note === 'string' && r.review_note ? r.review_note : 'Đã xem'}>
-                              ✓ {dmShort(r.reviewed_on)}
-                            </span>
-                          )}
-                        </Link>
-                        {/* Copy lệnh để dán vào Claude: Phân tích (đánh giá chi tiết, chỉ đọc) và Seen (đánh dấu đã xem, gõ thêm ghi chú 1 dòng). Sản phẩm: mã slug; ứng viên: id.
-                            Nằm đè ở góc dưới ô tên, chỉ hiện khi rê chuột vào dòng (không chiếm chỗ của tên). */}
-                        <div className="absolute bottom-1 left-2 z-10 flex items-center gap-1 opacity-0 pointer-events-none group-hover/row:opacity-100 group-hover/row:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
-                          <CopyCommand compact label="Phân tích" command={`/dropship-research analyze ${r.ref} `} className="shadow-sm" />
-                          <CopyCommand compact label="Seen" command={`/dropship-research seen ${r.ref} `} className="shadow-sm" />
-                        </div>
-                      </div>
+            {visible.map((r) => {
+              const pages = (r.meta_pages_json as MetaPageRef[] | null | undefined) ?? [];
+              const soc = new Map(((r.social_json as SocialRef[] | null | undefined) ?? []).map((x) => [x.id, x]));
+              const loc = new Map(((r.local_json as LocalRef[] | null | undefined) ?? []).map((x) => [x.id, x]));
+              const span = Math.max(1, pages.length);
+              return (
+                <Fragment key={`${r.loai_dong}-${r.ref}`}>
+                  {Array.from({ length: span }, (_, i) => {
+                    const last = i === span - 1;
+                    const bd = last ? 'border-b border-zinc-200' : 'border-b border-zinc-100';
+                    return (
+                      <tr key={i} className={i === 0 ? 'group/row' : undefined}>
+                        {shownCols.map((c) => {
+                          if (c.key === COMP_KEY) {
+                            const pg = pages[i];
+                            if (!pg) {
+                              return (
+                                <td key={c.key} colSpan={COMP_HEADS.length} className={`${bd} bg-violet-50 px-2 py-1 align-top text-zinc-400 whitespace-pre-line`}>
+                                  {fmt(c, r[c.key]) || '—'}
+                                </td>
+                              );
+                            }
+                            return <CompetitorCells key={c.key} p={pg} s={soc.get(pg.id)} l={loc.get(pg.id)} cls={bd} />;
+                          }
+                          if (i > 0) return null; // các cột sản phẩm gộp dòng (rowSpan) ở dòng con đầu tiên
+                          const text = fmt(c, r[c.key]);
+                          const numeric = ['int', 'num1', 'num2', 'pct'].includes(c.type);
+                          const isName = c.key === NAME_KEY;
+                          let body: React.ReactNode;
+                          if (isName) {
+                            body = (
+                              <div className="flex items-start gap-2">
+                                <input
+                                  type="checkbox"
+                                  aria-label={`Chọn ${text}`}
+                                  className="mt-0.5 shrink-0 accent-sky-600"
+                                  checked={selected.has(keyOf(r))}
+                                  onChange={() => toggleRow(r)}
+                                />
+                                <Link
+                                  href={r.loai_dong === 'san_pham' ? `/market-research/p/${r.ref}` : `/market-research/discover/${r.ref}`}
+                                  className="text-blue-700 hover:underline underline-offset-2"
+                                  title="Mở chi tiết sản phẩm"
+                                >
+                                  {text}
+                                  {isSeen(r) && (
+                                    <span className="ml-1.5 align-middle inline-block px-1 py-px rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-normal whitespace-nowrap" title={typeof r.review_note === 'string' && r.review_note ? r.review_note : 'Đã xem'}>
+                                      ✓ {dmShort(r.reviewed_on)}
+                                    </span>
+                                  )}
+                                </Link>
+                                {/* Copy lệnh để dán vào Claude: Phân tích (đánh giá chi tiết, chỉ đọc) và Seen (đánh dấu đã xem, gõ thêm ghi chú 1 dòng). Sản phẩm: mã slug; ứng viên: id.
+                                    Nằm đè ở góc dưới ô tên, chỉ hiện khi rê chuột vào dòng (không chiếm chỗ của tên). */}
+                                <div className="absolute bottom-1 left-2 z-10 flex items-center gap-1 opacity-0 pointer-events-none group-hover/row:opacity-100 group-hover/row:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
+                                  <CopyCommand compact label="Phân tích" command={`/dropship-research analyze ${r.ref} `} className="shadow-sm" />
+                                  <CopyCommand compact label="Seen" command={`/dropship-research seen ${r.ref} `} className="shadow-sm" />
+                                </div>
+                              </div>
+                            );
+                          } else if (c.key === 'nhom') {
+                            const t = tagOf(r);
+                            body = t ? <span className={`inline-block px-1.5 py-0.5 rounded border text-[11px] ${TAG_CLS[t]}`}>{TAG_LABEL[t]}</span> : null;
+                          } else if (c.type === 'url' && text) {
+                            body = <a href={text} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">Mở video</a>;
+                          } else {
+                            const tone = numeric ? toneOf(c.key, r[c.key]) : textToneOf(c.key, r[c.key]);
+                            body = text ? <span className={tone ? TONE_CLASS[tone] : ''}>{text}</span> : <span className="text-zinc-300">—</span>;
+                          }
+                          return (
+                            <td
+                              key={c.key}
+                              rowSpan={span}
+                              style={'maxw' in c ? { maxWidth: c.maxw } : undefined}
+                              className={`border-b border-zinc-200 px-2 py-1.5 align-top ${TINT_CELL[(c as { tint?: string }).tint ?? ''] ?? ''} ${numeric ? 'text-right tabular-nums' : 'whitespace-pre-line'} ${
+                                isName ? `sticky left-0 z-10 ${selected.has(keyOf(r)) ? 'bg-sky-50' : 'bg-white'} border-r font-medium` : ''
+                              }`}
+                            >
+                              {body}
+                            </td>
+                          );
+                        })}
+                      </tr>
                     );
-                  } else if (c.key === 'nhom') {
-                    const t = tagOf(r);
-                    body = t ? <span className={`inline-block px-1.5 py-0.5 rounded border text-[11px] ${TAG_CLS[t]}`}>{TAG_LABEL[t]}</span> : null;
-                  } else if (c.key === 'meta_pages') {
-                    body = <MetaPages pages={r.meta_pages_json as MetaPageRef[] | null | undefined} fallback={text} />;
-                  } else if (c.key === 'local_brand_check') {
-                    body = <LocalPages refs={r.local_json as LocalRef[] | null | undefined} />;
-                  } else if (c.key === 'competitor_social') {
-                    body = <SocialPages refs={r.social_json as SocialRef[] | null | undefined} />;
-                  } else if (c.type === 'url' && text) {
-                    body = <a href={text} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">Mở video</a>;
-                  } else {
-                    const tone = numeric ? toneOf(c.key, r[c.key]) : textToneOf(c.key, r[c.key]);
-                    body = text ? <span className={tone ? TONE_CLASS[tone] : ''}>{text}</span> : <span className="text-zinc-300">—</span>;
-                  }
-                  return (
-                    <td
-                      key={c.key}
-                      style={'maxw' in c ? { maxWidth: c.maxw } : undefined}
-                      className={`border-b border-zinc-100 px-2 py-1.5 align-top ${TINT_CELL[(c as { tint?: string }).tint ?? ''] ?? ''} ${numeric ? 'text-right tabular-nums' : 'whitespace-pre-line'} ${
-                        isName ? `sticky left-0 z-10 ${selected.has(keyOf(r)) ? 'bg-sky-50' : 'bg-white'} border-r font-medium` : ''
-                      }`}
-                    >
-                      {body}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+                  })}
+                </Fragment>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -415,9 +496,9 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
           <span className="tabular-nums text-zinc-500">{shown.length ? `${cur * PAGE_SIZE + 1}–${Math.min((cur + 1) * PAGE_SIZE, shown.length)} / ${shown.length} dòng` : '0 dòng'}</span>
         </div>
         <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-          {settingsStart}
+          <Fragment>{settingsStart}</Fragment>
           <ColumnPicker hidden={hidden} onToggle={toggleColumn} onReset={() => saveHidden(new Set(DEFAULT_HIDDEN))} onShowAll={() => saveHidden(new Set())} />
-          {settingsEnd}
+          <Fragment>{settingsEnd}</Fragment>
         </div>
       </div>
 

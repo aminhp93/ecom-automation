@@ -349,7 +349,7 @@ export const getOverview = () =>
 /** Bảng phẳng giống sheet pipeline (view v_pipeline_sheet): sản phẩm + ứng viên discover chưa thành sản phẩm. */
 export interface MetaPageRef { n: string; id: string; a: number | null; t: number | null; y: string | null; s?: number | null; m?: 'yes' | 'unverified' | null }
 /** Số liệu social của một page ở một nền tảng (từ competitor_social): last = số ngày từ bài/reel/video gần nhất, n30 = số bài trong 30 ngày (lb: ít nhất). */
-export interface SocialPlatform { last: number | null; n30: number | null; lb?: boolean; f: number | null; h: string | null; on: string }
+export interface SocialPlatform { last: number | null; n30: number | null; lb?: boolean; f: number | null; h: string | null; on: string; u?: string | null; likes?: number | null; days?: number[] | null; none?: boolean }
 export interface SocialRef { id: string; n: string; fb?: SocialPlatform; ig?: SocialPlatform; tt?: SocialPlatform }
 /** Kết quả kiểm local / nước ngoài của một page (từ advertiser_business_checks): model, nơi gửi hàng, pháp nhân, người nổi tiếng (nếu có tín hiệu "Người nổi tiếng" mà giá trị bắt đầu bằng "Có"). */
 export interface LocalRef { id: string; n: string; model?: string; conf?: string | null; ships?: string | null; entity?: string | null; celeb?: string | null; on?: string }
@@ -380,8 +380,8 @@ export const getPipelineTags = async () => {
 
 /** Social của page đối thủ (lệnh quét social ngày nào ghi ngày đó): lấy bản mới nhất theo page và nền tảng. Khoá = page_id Meta. */
 export const getPipelineSocial = async () => {
-  const rows = await get<{ page_id: string | null; platform: string; handle: string | null; followers: number | null; captured_on: string; detail: { last_post_days_ago?: number | null; posts_30d?: number | null; posts_30d_lower_bound?: boolean } | null }[]>(
-    'competitor_social?select=page_id,platform,handle,followers,captured_on,detail&page_id=not.is.null&relation=eq.brand&platform=in.(facebook,instagram,tiktok)&order=captured_on.desc&limit=2000',
+  const rows = await get<{ page_id: string | null; platform: string; handle: string | null; url: string | null; likes: number | null; followers: number | null; captured_on: string; detail: { status?: string; last_post_days_ago?: number | null; posts_30d?: number | null; posts_30d_lower_bound?: boolean; sample_days_ago?: number[] | null } | null }[]>(
+    'competitor_social?select=page_id,platform,handle,url,likes,followers,captured_on,detail&page_id=not.is.null&relation=eq.brand&platform=in.(facebook,instagram,tiktok)&order=captured_on.desc&limit=2000',
   );
   const key = { facebook: 'fb', instagram: 'ig', tiktok: 'tt' } as const;
   const m = new Map<string, { fb?: SocialPlatform; ig?: SocialPlatform; tt?: SocialPlatform }>();
@@ -390,7 +390,7 @@ export const getPipelineSocial = async () => {
     if (!r.page_id || !k) continue;
     const cur = m.get(r.page_id) ?? {};
     if (cur[k]) continue; // đã có bản mới hơn (sắp captured_on giảm dần)
-    cur[k] = { last: r.detail?.last_post_days_ago ?? null, n30: r.detail?.posts_30d ?? null, lb: r.detail?.posts_30d_lower_bound, f: r.followers, h: r.handle, on: r.captured_on };
+    cur[k] = { last: r.detail?.last_post_days_ago ?? null, n30: r.detail?.posts_30d ?? null, lb: r.detail?.posts_30d_lower_bound, f: r.followers, h: r.handle, on: r.captured_on, u: r.url, likes: r.likes, days: r.detail?.sample_days_ago ?? null, none: r.detail?.status === 'not_found' };
     m.set(r.page_id, cur);
   }
   return m;
@@ -551,3 +551,36 @@ export async function getProductDetail(slug: string): Promise<ProductDetail | nu
   return { overview, product, keywords, scores, amazon, listings, meta, tiktok, trends, advertisers, assessments, dossiers, decisions, checks, sessions, adStats, variants, social, angles, win };
 }
 
+
+// ── Theo dõi page đối thủ hằng ngày (Guard Blinds trước) ──────────────────────────────────────────
+export interface WatchedPage { page_id: string; label: string; active: boolean; added_on: string; note: string | null }
+export interface WatchContent {
+  id: number; page_id: string; channel: 'facebook' | 'instagram' | 'tiktok'; kind: string | null; ext_key: string;
+  posted_on: string | null; title: string | null; url: string | null; ad_id: string | null; duration_s: number | null;
+  views: number | null; reactions: number | null; comments: number | null; first_seen_on: string; last_checked_on: string | null; note: string | null;
+}
+export interface WatchContentSnapshot { content_id: number; captured_on: string; views: number | null; reactions: number | null; comments: number | null }
+export interface WatchWinningReel {
+  id: number; page_id: string; seq: number; file: string | null; reel_url: string | null; views: number | null; duration_s: number | null;
+  hook: string | null; angle: string | null; structure: string | null; audio: string | null; scenes: number | null; timeline: string | null; note: string | null;
+}
+export interface AdDaily { captured_on: string; active_all: number | null; total_all: number | null; active_au: number | null; longest_active_days: number | null }
+export interface SocialDaily {
+  platform: string; handle: string | null; url: string | null; followers: number | null; likes: number | null; posts: number | null; captured_on: string;
+  detail: { status?: string; last_post_days_ago?: number | null } | null;
+}
+
+export const getWatchedPages = () => get<(WatchedPage & { advertisers: { name: string } | null })[]>('watched_pages?select=*,advertisers(name)&active=eq.true&order=added_on.asc');
+
+export async function getWatchDetail(pageId: string) {
+  const id = q(pageId);
+  const [page, ads, social, content, snapshots, winning] = await Promise.all([
+    get<(WatchedPage & { advertisers: { name: string; website: string | null } | null })[]>(`watched_pages?select=*,advertisers(name,website)&page_id=eq.${id}`),
+    get<AdDaily[]>(`advertiser_snapshots?select=captured_on,active_all,total_all,active_au,longest_active_days&page_id=eq.${id}&order=captured_on.asc`),
+    get<SocialDaily[]>(`competitor_social?select=platform,handle,url,followers,likes,posts,captured_on,detail&page_id=eq.${id}&platform=in.(facebook,instagram,tiktok)&order=captured_on.asc,id.asc`),
+    get<WatchContent[]>(`watch_content?select=*&page_id=eq.${id}&order=posted_on.desc.nullslast,id.desc&limit=1000`),
+    get<WatchContentSnapshot[]>(`watch_content_snapshots?select=content_id,captured_on,views,reactions,comments,watch_content!inner(page_id)&watch_content.page_id=eq.${id}&order=captured_on.asc&limit=5000`),
+    get<WatchWinningReel[]>(`watch_winning_reels?select=*&page_id=eq.${id}&order=seq.asc`),
+  ]);
+  return { page: page[0] ?? null, ads, social, content, snapshots, winning };
+}

@@ -30,3 +30,21 @@ export function attachSocial(rows: PipelineRow[], social: SocialMap): PipelineRo
     return { ...r, social_json: any ? refs : null, competitor_social: any ? refs.map(socialLine).join('\n') : null };
   });
 }
+
+/** Số follower gọn: 1,2M · 93K · 685. */
+export const followersText = (n: number | null | undefined) =>
+  n == null ? '—' : n >= 1e6 ? `${(n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',')}M` : n >= 1e4 ? `${Math.round(n / 1e3)}K` : n >= 1e3 ? `${(n / 1e3).toFixed(1).replace('.', ',')}K` : String(n);
+
+/** Số bài trong N ngày gần nhất tại lúc quét: đếm từ mẫu ngày đăng (sample_days_ago); không có mẫu thì dùng số đã ghi (30 ngày). lb = cận dưới (mẫu chưa chạm tới bài cũ hơn N ngày nên có thể còn bài chưa thấy). */
+export function postsIn(p: SocialPlatform, n: 30 | 90): { n: number; lb: boolean } | null {
+  if (p.days && p.days.length) {
+    const inside = p.days.filter((d) => d <= n).length;
+    return { n: inside, lb: Math.max(...p.days) <= n };
+  }
+  if (n === 30 && p.n30 != null) return { n: p.n30, lb: !!p.lb };
+  return null;
+}
+
+/** Trạng thái ô social: 'unscanned' (chưa quét, không có dòng dữ liệu), 'none' (đã quét, không có tài khoản), 'ok' (có số liệu). */
+export type SocialState = 'unscanned' | 'none' | 'ok';
+export const socialState = (p?: SocialPlatform): SocialState => (!p ? 'unscanned' : p.none ? 'none' : 'ok');

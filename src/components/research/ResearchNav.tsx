@@ -4,14 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Compass } from 'lucide-react';
 
-// 3 tab chính: Tổng quan để định hướng → Bảng tổng hợp (mọi sản phẩm, một chỗ) để làm việc → Cơ sở đánh giá để tra cứu.
+// 3 tab: Bảng tổng hợp (mọi sản phẩm, một chỗ) để làm việc → Theo dõi đối thủ (số ad, social, nội dung hằng ngày, từ 10/10) → Cơ sở đánh giá để tra cứu. (Tab Tổng quan đã bỏ 10/10; /market-research chuyển thẳng sang Bảng tổng hợp.)
 const TABS = [
-  { href: '/market-research', label: 'Tổng quan', match: (p: string) => p === '/market-research' },
   {
     href: '/market-research/pipeline',
     label: 'Bảng tổng hợp',
     match: (p: string) => p.startsWith('/market-research/pipeline') || p.startsWith('/market-research/p/') || p.startsWith('/market-research/discover') || p.startsWith('/market-research/products'),
   },
+  { href: '/market-research/watch', label: 'Theo dõi đối thủ', match: (p: string) => p.startsWith('/market-research/watch') },
   { href: '/market-research/criteria', label: 'Cơ sở đánh giá', match: (p: string) => BASIS_TABS.some((t) => p.startsWith(t.href)) },
 ];
 

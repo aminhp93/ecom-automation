@@ -37,6 +37,12 @@
   "maxw": 200
  },
  {
+  "key": "target_dtc_price",
+  "label": "Giá bán DTC mục tiêu [ước tính]",
+  "type": "text",
+  "w": 120
+ },
+ {
   "key": "meta_pages",
   "label": "Meta pages: active/tổng - năm tạo page (✓ = đã xác nhận đúng sản phẩm, bấm để mở Ads Library)",
   "type": "text",
@@ -253,12 +259,6 @@
   "label": "Khả năng bundle/AOV [ước tính]",
   "type": "text",
   "w": 100
- },
- {
-  "key": "target_dtc_price",
-  "label": "Giá bán DTC mục tiêu [ước tính]",
-  "type": "text",
-  "w": 120
  },
  {
   "key": "landed_cost",

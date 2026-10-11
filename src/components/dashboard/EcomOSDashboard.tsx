@@ -29,7 +29,10 @@ export function EcomOSDashboard() {
   // Stage 06 có trang riêng /creative-studio; stage 02–05 đang tắt nên mở bằng URL cũng quay về trang chủ.
   useEffect(() => {
     if (currentStage === '06') router.replace('/creative-studio');
-    else if (['02', '03', '04', '05'].includes(currentStage)) router.replace('/');
+    else if (currentStage === 'store') router.replace('/store-setup');
+    else if (currentStage === '01') router.replace('/market-research');
+    else if (currentStage === '00') router.replace('/mindset');
+    else if (currentStage) router.replace('/');
   }, [currentStage, router]);
   const [products, setProducts] = useState<Product[]>([]);
   const [activeWorkingProductId, setActiveWorkingProductId] = useState<string>('');
@@ -199,7 +202,7 @@ export function EcomOSDashboard() {
       {/* 6-Stage Core V1 + Roadmap Sidebar */}
       <Sidebar
         currentStage={currentStage}
-        onSelectStage={(stage) => (stage === '01' ? router.push('/market-research') : stage === '06' ? router.push('/creative-studio') : setCurrentStage(stage))}
+        onSelectStage={(stage) => (stage === '00' ? router.push('/mindset') : stage === '01' ? router.push('/market-research') : stage === 'store' ? router.push('/store-setup') : stage === '06' ? router.push('/creative-studio') : setCurrentStage(stage))}
         activeProduct={activeWorkingProduct}
         stats={stats}
         providers={providers}

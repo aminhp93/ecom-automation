@@ -3,17 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
+  Brain,
   Compass,
-  CheckCircle2,
-  Users,
-  Truck,
-  Tag,
   Film,
-  Megaphone,
-  Rocket,
-  LineChart,
-  Sliders,
-  TrendingUp,
   Cpu,
   Coins,
   Lock,
@@ -35,27 +27,13 @@ interface SidebarProps {
   onToggleCollapse?: () => void;
 }
 
-// 6 Core Active Execution Stages (V1 Complete Pipeline)
-const CORE_STAGES = [
-  { id: '01', name: '01 Market Research', shortName: 'Research', icon: Compass },
-  { id: '02', name: '02 Product Validation', shortName: 'Validation', icon: CheckCircle2 },
-  { id: '03', name: '03 Competitor Research', shortName: 'Competitors', icon: Users },
-  { id: '04', name: '04 Supplier & Economics', shortName: 'Economics', icon: Truck },
-  { id: '05', name: '05 Offer Creation', shortName: 'Offer', icon: Tag },
-  { id: '06', name: '06 Creative Studio', shortName: 'Creative', icon: Film },
-];
-
-// Các stage đang tắt (không bấm được, không vào được qua URL). Bật lại bằng cách bỏ id khỏi danh sách.
-const DISABLED_STAGES = ['02', '03', '04', '05'];
-
-// Roadmap V2 Stages (Expansion modules)
-const ROADMAP_STAGES = [
-  { id: '07', name: '07 Advertising Setup', icon: Megaphone },
-  { id: '08', name: '08 Shopify Live Sync', icon: Store },
-  { id: '09', name: '09 Campaign Launch', icon: Rocket },
-  { id: '10', name: '10 Performance Analysis', icon: LineChart },
-  { id: '11', name: '11 AI Optimization', icon: Sliders },
-  { id: '12', name: '12 Scaling / Kill Guard', icon: TrendingUp },
+// Pipeline chỉ có 3 mục, theo thứ tự playbook: Market Research → Store Setup → Creative Studio.
+// id '01' và '06' giữ nguyên vì các trang cũ dùng; 'store' là mục mới (trang /store-setup).
+const STAGES = [
+  { id: '00', name: 'Mindset', shortName: 'Mindset', icon: Brain },
+  { id: '01', name: 'Market Research', shortName: 'Research', icon: Compass },
+  { id: 'store', name: 'Store Setup', shortName: 'Store', icon: Store },
+  { id: '06', name: 'Creative Studio', shortName: 'Creative', icon: Film },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -99,24 +77,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const getStageStatus = (stageId: string) => {
-    if (stageId === '06') return 'ready';
-    if (!activeProduct) {
-      if (stageId === '01') return 'ready';
-      return 'locked';
-    }
-    const statusMap = activeProduct.stage_status;
-    if (statusMap && (statusMap as any)[stageId]) {
-      return (statusMap as any)[stageId];
-    }
-    // Fallback based on stage completed data
-    if (stageId === '01') return 'completed';
-    if (stageId === '02') return activeProduct.validation ? 'completed' : 'ready';
-    if (stageId === '03') return activeProduct.competitor_analysis ? 'completed' : activeProduct.validation ? 'ready' : 'locked';
-    if (stageId === '04') return activeProduct.supplier_economics ? 'completed' : activeProduct.competitor_analysis ? 'ready' : 'locked';
-    if (stageId === '05') return activeProduct.offer_package ? 'completed' : activeProduct.supplier_economics ? 'ready' : 'locked';
-    return 'locked';
-  };
+  // Cả ba mục đều là trang riêng và luôn mở; không còn trạng thái khoá hay hoàn tất theo sản phẩm.
+  const getStageStatus = (_stageId: string) => 'ready';
 
   return (
     <aside
@@ -164,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div>
           {!collapsed ? (
             <div className="px-2 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-              <span>Pipeline V1 (Core)</span>
+              <span>Pipeline</span>
               {activeProduct && (
                 <span className="text-[9px] font-mono text-zinc-500 font-normal truncate max-w-[100px]" title={activeProduct.name}>
                   {activeProduct.name.split(' ')[0]}
@@ -173,16 +135,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           ) : (
             <div className="text-center py-1 text-[9px] font-mono font-semibold text-zinc-400 uppercase tracking-wider">
-              V1
+              ·
             </div>
           )}
 
           <div className="space-y-1 mt-1">
-            {CORE_STAGES.map((stage) => {
+            {STAGES.map((stage) => {
               const Icon = stage.icon;
               const isActive = currentStage === stage.id;
-              const isDisabled = DISABLED_STAGES.includes(stage.id);
-              const status = isDisabled ? 'locked' : getStageStatus(stage.id);
+              const isDisabled = false;
+              const status = getStageStatus(stage.id);
 
               return (
                 <button
@@ -251,51 +213,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Roadmap V2 Section */}
-        <div className={`pt-2 border-t border-zinc-100 ${collapsed ? 'text-center' : ''}`}>
-          {!collapsed ? (
-            <div className="px-2 py-1 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-              <span>Roadmap V2</span>
-              <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-zinc-100 text-zinc-500 border border-zinc-200">
-                Planned
-              </span>
-            </div>
-          ) : (
-            <div className="text-center py-1 text-[9px] font-mono font-semibold text-zinc-400 uppercase tracking-wider">
-              V2
-            </div>
-          )}
-
-          <div className="space-y-1 mt-1">
-            {ROADMAP_STAGES.map((stage) => {
-              const Icon = stage.icon;
-              const isActive = currentStage === stage.id;
-
-              return (
-                <button
-                  key={stage.id}
-                  onClick={() => onSelectStage(stage.id)}
-                  title={`${stage.name} • Thuộc Roadmap V2`}
-                  className={`relative w-full rounded-md transition-colors flex items-center text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50/50 ${
-                    collapsed
-                      ? 'justify-center p-2.5'
-                      : 'justify-between px-2.5 py-1.5 text-left'
-                  } ${isActive ? 'bg-zinc-100 text-zinc-800 font-medium' : ''}`}
-                >
-                  <div className={`flex items-center truncate ${collapsed ? 'justify-center' : 'gap-2.5'}`}>
-                    <Icon className="w-3.5 h-3.5 text-zinc-300 shrink-0" />
-                    {!collapsed && <span className="truncate text-[11px]">{stage.name}</span>}
-                  </div>
-                  {!collapsed ? (
-                    <Lock className="w-2.5 h-2.5 text-zinc-300 shrink-0" />
-                  ) : (
-                    <span className="absolute top-1 right-1 w-1 h-1 rounded-full bg-zinc-300" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* AI Router & Cost Status */}
