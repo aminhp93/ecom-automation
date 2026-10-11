@@ -1,7 +1,8 @@
-import { getPipelineReviews, getPipelineSheet, getPipelineSnapshots, getPipelineLocal, getPipelineSocial, getPipelineTags, getSnapshotRows, type PipelineRow } from '@/lib/research/db';
+import { getMarketplacePageIds, getPipelineReviews, getPipelineSheet, getPipelineSnapshots, getPipelineLocal, getPipelineQuotes, getPipelineSocial, getPipelineTags, getSnapshotRows, type PipelineRow } from '@/lib/research/db';
 import { attachSocial } from '@/lib/research/social';
 import { attachLocal } from '@/lib/research/local';
-import { attachGate } from '@/lib/research/gate';
+import { attachQuotes } from '@/lib/research/quotes';
+import { dropMarketplacePages } from '@/lib/research/pages-filter';
 import { PipelineTable, type GroupTab } from '@/components/research/PipelineTable';
 import { HelpPopover } from '@/components/research/HelpPopover';
 import { VersionSelect } from '@/components/research/VersionSelect';
@@ -19,7 +20,7 @@ const SRC_LABEL: Record<string, string> = { amazon: 'Amazon', trends: 'Trends', 
 
 export default async function PipelineSheetPage({ searchParams }: { searchParams: Promise<{ nhom?: string; v?: string }> }) {
   const { nhom, v } = await searchParams;
-  const [snaps, tags, reviews, social, local] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineReviews(), getPipelineSocial(), getPipelineLocal()]);
+  const [snaps, tags, reviews, social, local, quotes] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineReviews(), getPipelineSocial(), getPipelineLocal(), getPipelineQuotes()]);
   const latest = snaps[0]; // getPipelineSnapshots sắp theo id giảm dần; DB chỉ giữ 10 bản mới nhất
   const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? latest;
 
@@ -31,7 +32,7 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
   } else {
     rows = (await getPipelineSheet()).map((r) => ({ ...r, reviewed_on: reviews.get(`${r.loai_dong}:${r.ref}`)?.reviewed_on ?? null, review_note: reviews.get(`${r.loai_dong}:${r.ref}`)?.review_note ?? null }));
   }
-  rows = attachGate(attachLocal(attachSocial(rows, social), local)); // social và kiểm local đọc trực tiếp (không nằm trong bản chụp), ghép theo page_id Meta
+  rows = attachQuotes(attachLocal(attachSocial(dropMarketplacePages(rows, await getMarketplacePageIds()), social), local), quotes); // social và kiểm local đọc trực tiếp (không nằm trong bản chụp), ghép theo page_id Meta
   const products = rows.filter((r) => r.loai_dong === 'san_pham').length;
 
   // Tiêu đề ở thanh trên; bản dữ liệu, Cột, Làm mới, Xuất Excel, trợ giúp nằm ở góc dưới bên phải của bảng.
@@ -110,6 +111,8 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
         <ol className="list-decimal pl-4 space-y-0.5">
           {SCORE_CRITERIA.map((t) => <li key={t}>{t}</li>)}
         </ol>
+        <p className="font-medium text-zinc-800 pt-1">Page không liệt kê</p>
+        <p>Page của sàn và brand quá lớn (Temu, Shoptemu, Shopee, Amazon, AliExpress, SHEIN, TikTok Shop...) không hiện trong cột Meta pages, Social và Local (kind = marketplace trong bảng advertisers). Chúng không phải đối thủ trực tiếp và làm phồng số ad. Các cột đếm ad theo keyword vẫn tính cả sàn.</p>
         <p>Số Topview là ước tính. Số ad Meta “mọi nước” là số ad đang chạy ở mọi quốc gia, cột AU/US ở cuối bảng chỉ tính từng nước; số advertiser và ad &gt;60 ngày tính trong mẫu ~30 ad đầu, không phải toàn bộ.</p>
       </HelpPopover>
     </div>

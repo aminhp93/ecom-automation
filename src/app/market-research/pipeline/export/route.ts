@@ -2,10 +2,11 @@ import ExcelJS from 'exceljs';
 import columns from '@/lib/research/pipeline-columns.json';
 import { adsLibraryPageUrl } from '@/lib/research/adsLibraryUrl';
 import { textToneOf, toneOf, TONE_ARGB } from '@/lib/research/pipeline-rules';
-import { getPipelineLocal, getPipelineSnapshots, getPipelineSocial, getPipelineTags, getSnapshotRows, type MetaPageRef, type PipelineRow } from '@/lib/research/db';
+import { getMarketplacePageIds, getPipelineLocal, getPipelineQuotes, getPipelineSnapshots, getPipelineSocial, getPipelineTags, getSnapshotRows, type MetaPageRef, type PipelineRow } from '@/lib/research/db';
 import { attachSocial } from '@/lib/research/social';
 import { attachLocal } from '@/lib/research/local';
-import { attachGate } from '@/lib/research/gate';
+import { attachQuotes } from '@/lib/research/quotes';
+import { dropMarketplacePages } from '@/lib/research/pages-filter';
 import { pageLine, pageTone, PAGE_TONE_ARGB } from '@/lib/research/metaPages';
 
 // Xuất bảng tổng hợp ra Excel: bản dữ liệu đang chọn (?v=<id>, mặc định bản mới nhất), gắn tag hiện tại. Không lưu file ở đâu cả.
@@ -16,17 +17,17 @@ const TAG_RANK: Record<string, number> = { theo_doi: 0, loai: 2 };
 const TINT_HEAD: Record<string, string> = { amazon: 'FFDCFCE7', meta: 'FFFEF9C3' };
 const TINT_CELL: Record<string, string> = { amazon: 'FFF0FDF4', meta: 'FFFEFCE8' };
 const NUMFMT: Record<string, string> = { int: '#,##0', num1: '0.0', num2: '0.00', pct: '0.0%' };
-const WRAP = new Set(['meta_pages', 'competitor_social', 'local_brand_check', 'reason', 'meta_au_top', 'meta_au_top2', 'meta_us_top2', 'tt_top_item', 'cluster']);
+const WRAP = new Set(['meta_pages', 'competitor_social', 'local_brand_check', 'quotes', 'reason', 'meta_au_top', 'meta_au_top2', 'meta_us_top2', 'tt_top_item', 'cluster']);
 const adsLibrary = adsLibraryPageUrl;
 
 export async function GET(request: Request) {
   const v = new URL(request.url).searchParams.get('v');
-  const [snaps, tags, social, local] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineSocial(), getPipelineLocal()]);
+  const [snaps, tags, social, local, quotes] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineSocial(), getPipelineLocal(), getPipelineQuotes()]);
   const latest = snaps[0]; // getPipelineSnapshots sắp theo id giảm dần: bản mới nhất là mặc định
   const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? latest;
   if (!chosen) return new Response('Chưa có bản dữ liệu nào để xuất.', { status: 404 });
 
-  const rows: PipelineRow[] = attachGate(attachLocal(attachSocial((await getSnapshotRows(chosen.id)).map((r) => ({ ...r.row, nhom: tags.get(r.key) ?? null })), social), local));
+  const rows: PipelineRow[] = attachQuotes(attachLocal(attachSocial(dropMarketplacePages((await getSnapshotRows(chosen.id)).map((r) => ({ ...r.row, nhom: tags.get(r.key) ?? null })), await getMarketplacePageIds()), social), local), quotes);
   const num = (x: unknown) => (typeof x === 'number' ? x : -1);
   rows.sort((a, b) => (TAG_RANK[String(a.nhom)] ?? 1) - (TAG_RANK[String(b.nhom)] ?? 1) || num(b.au_searches) - num(a.au_searches) || String(a.name_vi).localeCompare(String(b.name_vi), 'vi'));
   const nProd = rows.filter((r) => r.loai_dong === 'san_pham').length;

@@ -387,7 +387,7 @@ function BenchmarkView({ store }: { store: string }) {
 }
 
 const STORES = [
-  { id: 'duskly', label: 'Duskly (store chính)' },
+  { id: 'duskly', label: 'Noctanest (store chính)' },
   { id: 'guard', label: 'Guard Blinds (tham khảo)' },
   { id: 'halo', label: 'Halo Blinds (tham khảo)' },
 ];

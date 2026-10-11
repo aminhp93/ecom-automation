@@ -18,12 +18,6 @@
   "w": 90
  },
  {
-  "key": "gate",
-  "label": "Cổng chốt (báo giá → unit economics → margin)",
-  "type": "text",
-  "w": 130
- },
- {
   "key": "nhom",
   "label": "Tag",
   "type": "group",
@@ -41,6 +35,12 @@
   "label": "Giá bán DTC mục tiêu [ước tính]",
   "type": "text",
   "w": 120
+ },
+ {
+  "key": "quotes",
+  "label": "Báo giá nhà cung cấp",
+  "type": "text",
+  "w": 300
  },
  {
   "key": "meta_pages",

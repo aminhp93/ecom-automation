@@ -353,7 +353,28 @@ export interface SocialPlatform { last: number | null; n30: number | null; lb?: 
 export interface SocialRef { id: string; n: string; fb?: SocialPlatform; ig?: SocialPlatform; tt?: SocialPlatform }
 /** Kết quả kiểm local / nước ngoài của một page (từ advertiser_business_checks): model, nơi gửi hàng, pháp nhân, người nổi tiếng (nếu có tín hiệu "Người nổi tiếng" mà giá trị bắt đầu bằng "Có"). */
 export interface LocalRef { id: string; n: string; model?: string; conf?: string | null; ships?: string | null; entity?: string | null; celeb?: string | null; on?: string }
-export type PipelineRow = Record<string, string | number | null | MetaPageRef[] | SocialRef[] | LocalRef[] | undefined>;
+export interface QuoteRef { supplier: string; item: string | null; size: string | null; url: string | null; unit: number | null; to: string | null; ship: number | null; total: number | null; proc: string | null; days: string | null; cur: string; on: string; note: string | null }
+export type PipelineRow = Record<string, string | number | null | MetaPageRef[] | SocialRef[] | LocalRef[] | QuoteRef[] | undefined>;
+
+/** Báo giá nhà cung cấp mới nhất theo từng (nhà cung cấp, size, nước nhận), gom theo slug sản phẩm. Đọc trực tiếp, không nằm trong bản chụp. */
+export const getPipelineQuotes = async () => {
+  const rows = await get<{ product_id: number; quoted_on: string; supplier: string; item: string | null; size: string | null; url: string | null; currency: string; unit_price: number | null; ship_to: string | null; ship_fee: number | null; total: number | null; process_days: string | null; delivery_days: string | null; note: string | null; products: { slug: string } | null }[]>(
+    'supplier_quotes?select=product_id,quoted_on,supplier,item,size,url,currency,unit_price,ship_to,ship_fee,total,process_days,delivery_days,note,products(slug)&order=quoted_on.desc,id.desc&limit=500',
+  );
+  const m = new Map<string, QuoteRef[]>();
+  const seen = new Set<string>();
+  for (const r of rows) {
+    const slug = r.products?.slug;
+    if (!slug) continue;
+    const k = `${slug}|${r.supplier}|${r.size}|${r.ship_to}`;
+    if (seen.has(k)) continue; // đã có báo giá mới hơn
+    seen.add(k);
+    const arr = m.get(slug) ?? [];
+    arr.push({ supplier: r.supplier, item: r.item, size: r.size, url: r.url, unit: r.unit_price, to: r.ship_to, ship: r.ship_fee, total: r.total, proc: r.process_days, days: r.delivery_days, cur: r.currency, on: r.quoted_on, note: r.note });
+    m.set(slug, arr);
+  }
+  return m;
+};
 export const getPipelineSheet = () =>
   get<PipelineRow[]>('v_pipeline_sheet?select=*&order=loai_dong.asc,score.desc.nullslast,ngay_quet.desc.nullslast');
 
@@ -584,3 +605,9 @@ export async function getWatchDetail(pageId: string) {
   ]);
   return { page: page[0] ?? null, ads, social, content, snapshots, winning };
 }
+
+/** Page của sàn/brand quá lớn (Temu, Shopee, Amazon, AliExpress, SHEIN, TikTok Shop...): advertisers.kind = 'marketplace'. Không liệt kê trong cột đối thủ của bảng tổng hợp (quy tắc 11/10/2026). */
+export const getMarketplacePageIds = async () => {
+  const rows = await get<{ page_id: string }[]>('advertisers?select=page_id&kind=eq.marketplace&limit=5000');
+  return new Set(rows.map((r) => r.page_id));
+};
