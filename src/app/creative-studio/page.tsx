@@ -11,7 +11,7 @@ export default function CreativeStudioPage() {
   return (
     <AppShell currentStage="06">
       <div className="min-h-full bg-[#fafafa] p-5">
-        <div className="max-w-6xl mx-auto">
+        <div className="w-full">
           <Stage06CreativeView />
         </div>
       </div>

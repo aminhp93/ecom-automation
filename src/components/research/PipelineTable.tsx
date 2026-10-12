@@ -304,7 +304,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
         if (y === null || y === undefined) return -1;
         return (typeof x === 'number' && typeof y === 'number' ? x - y : String(x).localeCompare(String(y), 'vi')) * dir;
       }
-      return tag(a) - tag(b) || num(b.diem_tiem_nang) - num(a.diem_tiem_nang) || num(b.au_searches) - num(a.au_searches) || num(b.meta_au_active_ads) - num(a.meta_au_active_ads);
+      return tag(a) - tag(b) || (b.shortlist ? 1 : 0) - (a.shortlist ? 1 : 0) || num(b.diem_tiem_nang) - num(a.diem_tiem_nang) || num(b.au_searches) - num(a.au_searches) || num(b.meta_au_active_ads) - num(a.meta_au_active_ads);
     });
     return out;
   }, [rows, tab, q, category, sort]);
@@ -455,7 +455,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
                                   className="text-blue-700 hover:underline underline-offset-2"
                                   title="Mở chi tiết sản phẩm"
                                 >
-                                  {text}
+                                  {r.shortlist ? <span className="mr-1 text-amber-500" title="Tiềm năng nhất trong nhóm Theo dõi">★</span> : null}{text}
                                 </Link>
                                 {/* Copy lệnh để dán vào Claude: Phân tích (đánh giá chi tiết, chỉ đọc) và Seen (đánh dấu đã xem, gõ thêm ghi chú 1 dòng). Sản phẩm: mã slug; ứng viên: id.
                                     Nằm đè ở góc dưới ô tên, chỉ hiện khi rê chuột vào dòng (không chiếm chỗ của tên). */}
@@ -487,7 +487,7 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
                               rowSpan={span}
                               style={'maxw' in c ? { maxWidth: c.maxw } : undefined}
                               className={`border-b border-zinc-200 px-2 py-1.5 align-top ${TINT_CELL[(c as { tint?: string }).tint ?? ''] ?? ''} ${numeric ? 'text-right tabular-nums' : 'whitespace-pre-line'} ${
-                                isName ? `sticky left-0 z-10 ${selected.has(keyOf(r)) ? 'bg-sky-50' : 'bg-white'} border-r font-medium` : ''
+                                isName ? `sticky left-0 z-10 ${selected.has(keyOf(r)) ? 'bg-sky-50' : r.shortlist ? 'bg-amber-50' : 'bg-white'} border-r font-medium` : ''
                               }`}
                             >
                               {body}

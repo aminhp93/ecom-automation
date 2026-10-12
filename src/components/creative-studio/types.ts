@@ -5,7 +5,11 @@ export interface Anchor { id: string; title: string; path: string; note: string 
 export interface SourceVideo { id: string; title: string; path: string; note: string }
 export interface SceneFlowItem {
   id: string; start: number; end: number; title: string; action: string; anchorIds: string[];
+  inputImages?: string[];
   reference?: { path: string; label: string; note: string }[];
+  suggestedReferences?: { path: string; label: string; note: string; reason: string }[];
+  suggestedShot?: string;
+  continuityNotes?: string[];
   ownScene?: string | null;
 }
 export interface Content {
@@ -28,7 +32,8 @@ export interface Channel {
 export interface Reference {
   competitor: string; note: string;
   ads: { id: string; start: string; seconds: number; scenes: number; note: string }[];
-  reels: { n: string; hook: string; angle: string; structure: string; audio: string; seconds: number; views: number | null }[];
+  reels: { n: string; hook: string; angle: string; structure: string; audio: string; seconds: number; views: number | null; file?: string; url?: string | null }[];
+  publicReels?: { rank: number; url: string; caption: string; viewsLabel: string }[];
   docs: { label: string; path: string }[];
 }
 export interface Data { product: string; angles: Angle[]; contents: Content[]; posts: Post[]; channels: { brand: string; channels: Channel[] } | null; reference: Reference | null }

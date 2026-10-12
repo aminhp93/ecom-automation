@@ -45,9 +45,15 @@ export function ReferenceView({ reference }: { reference: Reference | null }) {
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-zinc-600"><b>{reference.competitor}</b>: {reference.note}</div>
       <div className="bg-white border border-zinc-200 rounded-lg p-4 overflow-x-auto">
         <div className="font-medium text-zinc-900 mb-2">10 Reel đã tải và phân tích</div>
-        <table className="w-full min-w-[700px]"><thead><tr className="text-left text-zinc-500"><th className="pr-2">#</th><th className="pr-2">Hook</th><th className="pr-2">Angle</th><th className="pr-2">Âm thanh</th><th>Dài</th></tr></thead>
-          <tbody>{reference.reels.map((r) => <tr key={r.n} className="border-t border-zinc-100 align-top"><td className="pr-2">{r.n}</td><td className="pr-2">{r.hook}</td><td className="pr-2 text-zinc-600">{r.angle}</td><td className="pr-2">{r.audio}</td><td>{r.seconds} s</td></tr>)}</tbody></table>
+        <table className="w-full min-w-[850px]"><thead><tr className="text-left text-zinc-500"><th className="pr-2">#</th><th className="pr-2">Hook</th><th className="pr-2">Angle</th><th className="pr-2">Âm thanh</th><th className="pr-2">Dài</th><th>Nguồn để kiểm tra</th></tr></thead>
+          <tbody>{reference.reels.map((r) => <tr key={r.n} className="border-t border-zinc-100 align-top"><td className="pr-2">{r.n}</td><td className="pr-2">{r.hook}</td><td className="pr-2 text-zinc-600">{r.angle}</td><td className="pr-2">{r.audio}</td><td className="pr-2">{r.seconds} s</td><td className="space-x-2">{r.file && <a href={`/api/creative-studio/file?path=${encodeURIComponent(`blackout-curtains/reference/guard-blinds/${r.file}`)}`} target="_blank" rel="noreferrer" className="text-blue-700 underline">Xem bản lưu</a>}{r.url ? <a href={r.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">Mở Reel gốc</a> : <span className="text-zinc-400">URL gốc chưa đối chiếu</span>}</td></tr>)}</tbody></table>
       </div>
+      {!!reference.publicReels?.length && <div className="bg-white border border-zinc-200 rounded-lg p-4 overflow-x-auto">
+        <div className="font-medium text-zinc-900 mb-1">Reel công khai đã ghi link</div>
+        <p className="text-[11px] text-zinc-500 mb-2">Danh sách theo view ghi nhận 09/10/2026. Chưa xác nhận các link này trùng với 10 file đã tải ở bảng trên.</p>
+        <table className="w-full min-w-[650px]"><thead><tr className="text-left text-zinc-500"><th className="pr-2">#</th><th className="pr-2">Caption</th><th className="pr-2">View khi ghi</th><th>Link</th></tr></thead>
+          <tbody>{reference.publicReels.map((r) => <tr key={r.rank} className="border-t border-zinc-100"><td className="pr-2">{r.rank}</td><td className="pr-2">{r.caption}</td><td className="pr-2">{r.viewsLabel}</td><td><a href={r.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">Mở Reel ↗</a></td></tr>)}</tbody></table>
+      </div>}
       <div className="bg-white border border-zinc-200 rounded-lg p-4 overflow-x-auto">
         <div className="font-medium text-zinc-900 mb-2">5 video quảng cáo (Ads Library)</div>
         <table className="w-full min-w-[600px]"><thead><tr className="text-left text-zinc-500"><th className="pr-2">Library ID</th><th className="pr-2">Chạy từ</th><th className="pr-2">Dài</th><th className="pr-2">Cảnh</th><th>Ghi chú</th></tr></thead>

@@ -399,6 +399,12 @@ export const getPipelineTags = async () => {
   return new Map(rows.map((r) => [`${r.loai_dong}:${r.ref}`, r.nhom]));
 };
 
+/** Sản phẩm được đánh dấu tiềm năng nhất (products.shortlist, do người dùng chọn). Trả về tập slug. */
+export const getPipelineShortlist = async () => {
+  const rows = await get<{ slug: string }[]>('products?select=slug&shortlist=eq.true');
+  return new Set(rows.map((r) => r.slug));
+};
+
 /** Social của page đối thủ (lệnh quét social ngày nào ghi ngày đó): lấy bản mới nhất theo page và nền tảng. Khoá = page_id Meta. */
 export const getPipelineSocial = async () => {
   const rows = await get<{ page_id: string | null; platform: string; handle: string | null; url: string | null; likes: number | null; followers: number | null; captured_on: string; detail: { status?: string; last_post_days_ago?: number | null; posts_30d?: number | null; posts_30d_lower_bound?: boolean; sample_days_ago?: number[] | null } | null }[]>(

@@ -1,4 +1,4 @@
-import { getMarketplacePageIds, getPipelineReviews, getPipelineSheet, getPipelineSnapshots, getPipelineLocal, getPipelineQuotes, getPipelineSocial, getPipelineTags, getSnapshotRows, type PipelineRow } from '@/lib/research/db';
+import { getMarketplacePageIds, getPipelineReviews, getPipelineSheet, getPipelineSnapshots, getPipelineLocal, getPipelineQuotes, getPipelineShortlist, getPipelineSocial, getPipelineTags, getSnapshotRows, type PipelineRow } from '@/lib/research/db';
 import { attachSocial } from '@/lib/research/social';
 import { attachLocal } from '@/lib/research/local';
 import { attachQuotes } from '@/lib/research/quotes';
@@ -20,7 +20,7 @@ const SRC_LABEL: Record<string, string> = { amazon: 'Amazon', trends: 'Trends', 
 
 export default async function PipelineSheetPage({ searchParams }: { searchParams: Promise<{ nhom?: string; v?: string }> }) {
   const { nhom, v } = await searchParams;
-  const [snaps, tags, reviews, social, local, quotes] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineReviews(), getPipelineSocial(), getPipelineLocal(), getPipelineQuotes()]);
+  const [snaps, tags, reviews, social, local, quotes, shortlist] = await Promise.all([getPipelineSnapshots(), getPipelineTags(), getPipelineReviews(), getPipelineSocial(), getPipelineLocal(), getPipelineQuotes(), getPipelineShortlist()]);
   const latest = snaps[0]; // getPipelineSnapshots sắp theo id giảm dần; DB chỉ giữ 10 bản mới nhất
   const chosen = (v ? snaps.find((s) => s.id === Number(v)) : undefined) ?? latest;
 
@@ -32,6 +32,7 @@ export default async function PipelineSheetPage({ searchParams }: { searchParams
   } else {
     rows = (await getPipelineSheet()).map((r) => ({ ...r, reviewed_on: reviews.get(`${r.loai_dong}:${r.ref}`)?.reviewed_on ?? null, review_note: reviews.get(`${r.loai_dong}:${r.ref}`)?.review_note ?? null }));
   }
+  rows = rows.map((r) => (r.loai_dong === 'san_pham' && shortlist.has(String(r.ref)) ? { ...r, shortlist: 1 } : r)); // sản phẩm tiềm năng nhất do người dùng chọn
   rows = attachQuotes(attachLocal(attachSocial(dropMarketplacePages(rows, await getMarketplacePageIds()), social), local), quotes); // social và kiểm local đọc trực tiếp (không nằm trong bản chụp), ghép theo page_id Meta
   const products = rows.filter((r) => r.loai_dong === 'san_pham').length;
 

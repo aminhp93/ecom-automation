@@ -19,9 +19,9 @@ export function SceneFlow({ content }: { content: Content }) {
           <h3 className="text-sm font-semibold text-zinc-900">Input · video nguồn đầy đủ</h3>
           <p className="mt-1 text-[11px] text-zinc-500">Phát trực tiếp tại đây để xem toàn bộ mạch video Guard. Các đoạn dùng tham chiếu được ghi dưới mỗi player; không đưa footage này vào bản Noctanest.</p>
         </div>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {sourceVideos.map((source) => <figure key={source.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-            <video src={mediaUrl(source.path)} controls playsInline preload="metadata" aria-label={`Video nguồn đầy đủ ${source.title}`} className="mx-auto max-h-[480px] w-full rounded bg-black object-contain" />
+            <video src={mediaUrl(source.path)} controls playsInline preload="metadata" aria-label={`Video nguồn đầy đủ ${source.title}`} className="aspect-[9/16] w-full rounded bg-black object-contain" />
             <figcaption className="mt-2 space-y-1">
               <div className="font-medium text-zinc-900">{source.title} · toàn bộ video</div>
               <div className="text-[11px] text-zinc-500">{source.note}</div>
@@ -37,7 +37,7 @@ export function SceneFlow({ content }: { content: Content }) {
           </div>
           <span className="rounded border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] text-amber-800">Chưa duyệt để đăng</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {anchors.map((anchor) => (
             <figure key={anchor.id} className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
               <div className="relative aspect-[4/3] bg-zinc-100">
@@ -63,22 +63,23 @@ export function SceneFlow({ content }: { content: Content }) {
         <div className="mb-3 flex h-2 overflow-hidden rounded-full bg-zinc-100" aria-hidden="true">
           {scenes.map((scene, i) => <div key={scene.id} style={{ flex: scene.end - scene.start }} className={i % 2 ? 'bg-violet-300' : 'bg-violet-500'} />)}
         </div>
-        <ol className="grid gap-3 lg:grid-cols-3 2xl:grid-cols-6">
+        <ol className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {scenes.map((scene, index) => {
             const refs = scene.reference ?? [];
             const primary = refs[0];
             const sceneAnchors = anchors.filter((a) => scene.anchorIds.includes(a.id));
+            const inputImages = scene.inputImages ?? [];
             return (
               <li key={scene.id} className="min-w-0 overflow-hidden rounded-lg border border-zinc-200 bg-white">
                 <div className="flex items-center justify-between gap-2 border-b border-zinc-100 px-3 py-2">
                   <span className="font-semibold text-violet-800">{String(index + 1).padStart(2, '0')} · {scene.title}</span>
                   <span className="shrink-0 text-[10px] text-zinc-500">{seconds(scene.start)}–{seconds(scene.end)}</span>
                 </div>
-                <div className="relative aspect-[9/10] bg-zinc-950">
+                <div className="relative aspect-[9/12] bg-zinc-950">
                   {primary ? (
                     <video src={mediaUrl(primary.path)} controls muted playsInline preload="metadata" aria-label={`Clip tham chiếu ${primary.label} cho cảnh ${index + 1}`} className="h-full w-full object-contain" />
-                  ) : sceneAnchors[0] ? (
-                    <Image src={mediaUrl(sceneAnchors[0].path)} alt={`Ảnh neo minh hoạ cảnh ${index + 1}`} fill unoptimized sizes="(max-width: 1024px) 100vw, 33vw" className="object-contain opacity-85" />
+                  ) : inputImages[0] || sceneAnchors[0] ? (
+                    <Image src={mediaUrl(inputImages[0] ?? sceneAnchors[0].path)} alt={`Ảnh neo minh hoạ cảnh ${index + 1}`} fill unoptimized sizes="(max-width: 1024px) 100vw, 33vw" className="object-contain opacity-85" />
                   ) : (
                     <div className="flex h-full items-center justify-center text-zinc-400">Chưa có hình tham chiếu</div>
                   )}
@@ -88,7 +89,14 @@ export function SceneFlow({ content }: { content: Content }) {
                 </div>
                 <div className="space-y-2 p-3">
                   <p className="min-h-12 leading-relaxed text-zinc-700">{scene.action}</p>
-                  <p className="text-[10px] text-zinc-500">Ảnh neo: {sceneAnchors.map((a) => a.title).join(' · ') || '—'}</p>
+                  <div>
+                    <p className="mb-1 text-[10px] font-medium text-zinc-600">Input cảnh {String(index + 1).padStart(2, '0')} · {sceneAnchors.map((a) => a.title).join(' + ') || '—'}</p>
+                    <div className="grid grid-cols-3 gap-1">
+                      {inputImages.map((path) => <div key={path} className="relative aspect-square overflow-hidden rounded bg-zinc-100">
+                        <Image src={mediaUrl(path)} alt={`Ảnh input ${path.split('/').at(-1)}`} fill unoptimized sizes="100px" className="object-cover" />
+                      </div>)}
+                    </div>
+                  </div>
                   {primary && <p className="text-[10px] text-amber-800">{primary.label}: {primary.note}</p>}
                   {refs.slice(1).map((ref) => <div key={ref.path} className="space-y-1 border-t border-zinc-100 pt-2">
                     <video src={mediaUrl(ref.path)} controls muted playsInline preload="metadata" aria-label={`Clip tham chiếu ${ref.label} cho cảnh ${index + 1}`} className="aspect-video w-full rounded bg-black object-contain" />
@@ -103,6 +111,32 @@ export function SceneFlow({ content }: { content: Content }) {
           })}
         </ol>
       </div>
+      {scenes.some((scene) => scene.suggestedReferences?.length) && <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-4">
+        <h3 className="text-sm font-semibold text-zinc-900">Gợi ý tham chiếu · thay cảnh từ video khác</h3>
+        <p className="mt-1 text-[11px] text-zinc-600">Giữ nguyên flow gốc phía trên. Các clip dưới đây là lựa chọn để xem và so sánh, chưa ghép vào Video 3 và chưa được dùng làm footage Noctanest.</p>
+        {anchors.length > 0 && <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {anchors.map((anchor) => <figure key={anchor.id} className="flex gap-3 rounded-lg border border-violet-100 bg-white p-2">
+            <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded bg-zinc-100"><Image src={mediaUrl(anchor.path)} alt={anchor.title} fill unoptimized sizes="96px" className="object-cover" /></div>
+            <figcaption className="text-[11px] leading-relaxed"><p className="font-semibold text-zinc-900">{anchor.title}</p><p className="mt-1 text-zinc-600">{anchor.note}</p></figcaption>
+          </figure>)}
+        </div>}
+        <p className="mt-3 rounded border border-amber-200 bg-amber-50 p-2 text-[11px] text-amber-900">Sản phẩm: cùng một tấm honeycomb có khung màu than cho cửa sổ này. Ảnh concept sản phẩm cũ chưa đối chiếu kích thước và cách lắp; chờ ảnh mẫu thật trước khi khoá hình sản phẩm.</p>
+        <ol className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-5">
+          {scenes.map((scene, index) => <li key={scene.id} className="rounded-lg border border-violet-100 bg-white p-3">
+            <div className="mb-2 font-semibold text-violet-800">{String(index + 1).padStart(2, '0')} · {scene.title}</div>
+            {(scene.suggestedReferences ?? []).map((ref) => <figure key={ref.path}>
+              <video src={mediaUrl(ref.path)} controls muted playsInline preload="metadata" aria-label={`Gợi ý ${ref.label} thay cảnh ${index + 1}`} className="aspect-[9/12] w-full rounded bg-black object-contain" />
+              <figcaption className="mt-2 space-y-1 text-[11px] leading-relaxed">
+                <p className="font-medium text-zinc-900">{ref.label}</p>
+                <p className="text-zinc-600">{ref.note}</p>
+                <p className="text-violet-800">Vì sao: {ref.reason}</p>
+              </figcaption>
+            </figure>)}
+            {scene.suggestedShot && <div className="mt-2 border-t border-violet-100 pt-2 text-[11px] leading-relaxed"><p className="font-semibold text-violet-900">Cảnh Noctanest cần tạo</p><p className="mt-1 text-zinc-700">{scene.suggestedShot}</p></div>}
+            {!!scene.continuityNotes?.length && <ul className="mt-2 list-disc space-y-1 pl-4 text-[10px] text-zinc-600">{scene.continuityNotes.map((note) => <li key={note}>{note}</li>)}</ul>}
+          </li>)}
+        </ol>
+      </div>}
     </section>
   );
 }
