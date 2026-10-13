@@ -3,6 +3,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import columns from '@/lib/research/pipeline-columns.json';
+import { TikTokPreview } from '@/components/research/TikTokPreview';
 import type { LocalRef, MetaPageRef, PipelineRow, QuoteRef, SocialRef } from '@/lib/research/db';
 import { pageLine, pageTone, PAGE_TONE_CLASS } from '@/lib/research/metaPages';
 import { socialLine, socialTitle, postsIn, socialState, followersText } from '@/lib/research/social';
@@ -16,8 +17,8 @@ type Col = (typeof columns)[number];
 const NAME_KEY = 'name_vi';
 const PAGE_SIZE = 10;
 // Cột ẩn mặc định (người dùng bật lại ở nút "Cột"; lựa chọn được nhớ trong trình duyệt). Cột tên sản phẩm luôn hiện.
-const DEFAULT_HIDDEN = ['keyword', 'ref', 'cluster', 'landed_cost', 'nhom', 'diem_chua_ro'];
-const HIDDEN_STORAGE_KEY = 'pipeline.hiddenColumns.v3';
+const DEFAULT_HIDDEN = ['keyword', 'ref', 'cluster', 'landed_cost', 'nhom', 'diem_chua_ro', 'diem_tiem_nang'];
+const HIDDEN_STORAGE_KEY = 'pipeline.hiddenColumns.v4';
 const shortLabel = (label: string) => {
   const t = label.replace(/\s*\([^)]*\)\s*$/, ''); // chỉ bỏ phần giải thích trong ngoặc ở cuối nhãn
   return t.length > 56 ? `${t.slice(0, 55)}…` : t;
@@ -121,22 +122,22 @@ const QUOTE_HEADS: { label: string; title?: string }[] = [
   { label: 'Ngày báo' },
 ];
 const usd = (n: number | null) => (n == null ? null : n.toFixed(2));
-const PLAT_COLS = ['Link', 'follower', 'bài 90d'];
+const PLAT_COLS = ['Link', 'follower', 'bài 90d']; // FB/IG hiển thị thành "reel 90d" (chỉ đếm Reel); TikTok vẫn là bài/video
 const COMP_HEADS: { label: string; title?: string }[] = [
   { label: 'Page đối thủ', title: 'Meta pages tìm được; ✓ = đã xác nhận đúng sản phẩm. Bấm tên để mở Ads Library' },
   { label: 'Ad active / tổng' },
   { label: 'Năm tạo page' },
   { label: 'Local check', title: '◌ = chưa kiểm' },
   ...(['FB', 'IG', 'TT'] as const).flatMap((pf) => PLAT_COLS.map((c) => ({
-    label: `${pf} ${c}`,
-    title: c === 'Link' ? 'Link tài khoản tìm được (cần verify). ◌ chưa quét · ∅ đã quét, không có tài khoản' : c === 'bài 90d' ? 'Số bài trong khoảng ngày, tính tại lúc quét; ≥ là cận dưới (mẫu chưa chạm tới bài cũ hơn)' : undefined,
+    label: c === 'bài 90d' && pf !== 'TT' ? `${pf} reel 90d` : `${pf} ${c}`,
+    title: c === 'Link' ? 'Link tài khoản tìm được (cần verify). ◌ chưa quét · ∅ đã quét, không có tài khoản' : c === 'bài 90d' ? (pf === 'TT' ? 'Số bài/video trong khoảng ngày, tính tại lúc quét; ≥ là cận dưới' : 'Số REEL (không tính bài ảnh) trong 90 ngày. ? = chưa quét reel; ≥ là cận dưới (trang chưa tải tới mốc 90 ngày)') : undefined,
   }))),
 ];
 
 const UNSCANNED = <span className="text-zinc-400" title="Chưa quét">◌</span>;
 const NOACCOUNT = <span className="text-zinc-500" title="Đã quét: không có tài khoản">∅</span>;
 
-function PlatformCells({ p, cls }: { p?: Parameters<typeof socialState>[0]; cls: string }) {
+function PlatformCells({ p, cls, reel }: { p?: Parameters<typeof socialState>[0]; cls: string; reel?: boolean }) {
   const td = `bg-violet-50 px-2 py-1 align-top whitespace-nowrap tabular-nums ${cls}`;
   const st = socialState(p);
   if (st !== 'ok' || !p) {
@@ -144,6 +145,11 @@ function PlatformCells({ p, cls }: { p?: Parameters<typeof socialState>[0]; cls:
     return <>{PLAT_COLS.map((c) => <td key={c} className={`${td} text-center`}>{icon}</td>)}</>;
   }
   const cnt = (n: 90) => {
+    if (reel) {
+      // Facebook, Instagram: chỉ đếm Reel (không đếm bài ảnh/post). Chưa quét reel thì "?".
+      if (p.reels == null) return <span className="text-zinc-300" title="Chưa quét reel">?</span>;
+      return <span title={`Số reel trong 90 ngày, quét ${p.reelsOn ?? ''}${p.reelsLb ? '; ≥ là cận dưới (trang chưa tải tới mốc 90 ngày)' : ''}${p.reelsEst ? '; ≈ là ước tính từ 10 reel mới nhất (Facebook không cho xem hết)' : ''}`}>{p.reelsLb ? '≥' : p.reelsEst ? '≈' : ''}{p.reels}</span>;
+    }
     const v = postsIn(p, n);
     return v ? `${v.lb ? '≥' : ''}${v.n}` : <span className="text-zinc-300" title="Chưa có số">?</span>;
   };
@@ -187,8 +193,8 @@ function CompetitorCells({ p, s, l, cls }: { p: MetaPageRef; s?: SocialRef; l?: 
       <td className={`${td} tabular-nums ${tone}`}>{p.a != null || p.t != null ? `${p.a ?? '?'} / ${p.t ?? '?'}` : p.s != null ? `${p.s} ad (mẫu)` : dash}</td>
       <td className={`${td} tabular-nums`}>{p.y ?? dash}</td>
       <td className={td} title={l ? localTitle(l) : 'Chưa kiểm local'}>{l?.model ? <>{MODEL_LABEL[l.model] ?? l.model}{l.celeb ? ' ★' : ''}</> : UNSCANNED}</td>
-      <PlatformCells p={s?.fb} cls={cls} />
-      <PlatformCells p={s?.ig} cls={cls} />
+      <PlatformCells p={s?.fb} cls={cls} reel />
+      <PlatformCells p={s?.ig} cls={cls} reel />
       <PlatformCells p={s?.tt} cls={cls} />
     </>
   );
@@ -468,13 +474,27 @@ export function PipelineTable({ rows, initialTab = 'tat-ca', toolbarLeft, settin
                             const t = tagOf(r);
                             body = t ? <span className={`inline-block px-1.5 py-0.5 rounded border text-[11px] ${TAG_CLS[t]}`}>{TAG_LABEL[t]}</span> : null;
                           } else if (c.key === 'reason' && text) {
-                            // Lý do: mỗi ý một gạch đầu dòng (tách theo xuống dòng; không có thì tách theo "; " và ". ")
-                            const items = (text.includes('\n') ? text.split('\n') : text.split(/(?<=[.;])\s+/)).map((x) => x.replace(/^[-•\s]+/, '').replace(/[;]\s*$/, '').trim()).filter(Boolean);
+                            // Lý do: mỗi ý một gạch đầu dòng; dòng bắt đầu bằng "▸" là phần "Có thể làm tốt hơn" xếp bên dưới 4 câu hỏi chính
+                            const all = (text.includes('\n') ? text.split('\n') : text.split(/(?<=[.;])\s+/)).map((x) => x.replace(/^[-•\s]+/, '').replace(/[;]\s*$/, '').trim()).filter(Boolean);
+                            const better = all.filter((x) => x.startsWith('▸')).map((x) => x.replace(/^▸\s*/, ''));
+                            const items = all.filter((x) => !x.startsWith('▸'));
                             body = (
-                              <ul className="list-disc pl-4 space-y-0.5 whitespace-normal">
-                                {items.map((it, i) => <li key={i}>{it}</li>)}
-                              </ul>
+                              <div className="whitespace-normal">
+                                <ul className="list-disc pl-4 space-y-0.5">
+                                  {items.map((it, i) => <li key={i}>{it}</li>)}
+                                </ul>
+                                {better.length > 0 && (
+                                  <div className="mt-2 pt-1.5 border-t border-zinc-200">
+                                    <div className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500 mb-0.5">Có thể làm tốt hơn</div>
+                                    <ul className="list-disc pl-4 space-y-0.5 text-zinc-700">
+                                      {better.map((it, i) => <li key={i}>{it}</li>)}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
                             );
+                          } else if (c.key === 'tt_video_url' && text) {
+                            body = <TikTokPreview url={text} />;
                           } else if (c.type === 'url' && text) {
                             body = <a href={text} target="_blank" rel="noreferrer" className="text-blue-700 hover:underline">Mở video</a>;
                           } else {

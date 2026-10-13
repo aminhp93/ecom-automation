@@ -349,7 +349,7 @@ export const getOverview = () =>
 /** Bảng phẳng giống sheet pipeline (view v_pipeline_sheet): sản phẩm + ứng viên discover chưa thành sản phẩm. */
 export interface MetaPageRef { n: string; id: string; a: number | null; t: number | null; y: string | null; s?: number | null; m?: 'yes' | 'unverified' | null }
 /** Số liệu social của một page ở một nền tảng (từ competitor_social): last = số ngày từ bài/reel/video gần nhất, n30 = số bài trong 30 ngày (lb: ít nhất). */
-export interface SocialPlatform { last: number | null; n30: number | null; lb?: boolean; f: number | null; h: string | null; on: string; u?: string | null; likes?: number | null; days?: number[] | null; none?: boolean }
+export interface SocialPlatform { last: number | null; n30: number | null; lb?: boolean; f: number | null; h: string | null; on: string; u?: string | null; likes?: number | null; days?: number[] | null; none?: boolean; reels?: number | null; reelsLb?: boolean; reelsEst?: boolean; reelsOn?: string | null }
 export interface SocialRef { id: string; n: string; fb?: SocialPlatform; ig?: SocialPlatform; tt?: SocialPlatform }
 /** Kết quả kiểm local / nước ngoài của một page (từ advertiser_business_checks): model, nơi gửi hàng, pháp nhân, người nổi tiếng (nếu có tín hiệu "Người nổi tiếng" mà giá trị bắt đầu bằng "Có"). */
 export interface LocalRef { id: string; n: string; model?: string; conf?: string | null; ships?: string | null; entity?: string | null; celeb?: string | null; on?: string }
@@ -407,7 +407,7 @@ export const getPipelineShortlist = async () => {
 
 /** Social của page đối thủ (lệnh quét social ngày nào ghi ngày đó): lấy bản mới nhất theo page và nền tảng. Khoá = page_id Meta. */
 export const getPipelineSocial = async () => {
-  const rows = await get<{ page_id: string | null; platform: string; handle: string | null; url: string | null; likes: number | null; followers: number | null; captured_on: string; detail: { status?: string; last_post_days_ago?: number | null; posts_30d?: number | null; posts_30d_lower_bound?: boolean; sample_days_ago?: number[] | null } | null }[]>(
+  const rows = await get<{ page_id: string | null; platform: string; handle: string | null; url: string | null; likes: number | null; followers: number | null; captured_on: string; detail: { status?: string; last_post_days_ago?: number | null; posts_30d?: number | null; posts_30d_lower_bound?: boolean; sample_days_ago?: number[] | null; reels_90d?: number | null; reels_90d_lb?: boolean; reels_90d_est?: boolean; reels_scanned_on?: string } | null }[]>(
     'competitor_social?select=page_id,platform,handle,url,likes,followers,captured_on,detail&page_id=not.is.null&relation=eq.brand&platform=in.(facebook,instagram,tiktok)&order=captured_on.desc&limit=2000',
   );
   const key = { facebook: 'fb', instagram: 'ig', tiktok: 'tt' } as const;
@@ -417,7 +417,7 @@ export const getPipelineSocial = async () => {
     if (!r.page_id || !k) continue;
     const cur = m.get(r.page_id) ?? {};
     if (cur[k]) continue; // đã có bản mới hơn (sắp captured_on giảm dần)
-    cur[k] = { last: r.detail?.last_post_days_ago ?? null, n30: r.detail?.posts_30d ?? null, lb: r.detail?.posts_30d_lower_bound, f: r.followers, h: r.handle, on: r.captured_on, u: r.url, likes: r.likes, days: r.detail?.sample_days_ago ?? null, none: r.detail?.status === 'not_found' };
+    cur[k] = { last: r.detail?.last_post_days_ago ?? null, n30: r.detail?.posts_30d ?? null, lb: r.detail?.posts_30d_lower_bound, f: r.followers, h: r.handle, on: r.captured_on, u: r.url, likes: r.likes, days: r.detail?.sample_days_ago ?? null, none: r.detail?.status === 'not_found', reels: r.detail?.reels_90d ?? null, reelsLb: !!r.detail?.reels_90d_lb, reelsEst: !!r.detail?.reels_90d_est, reelsOn: r.detail?.reels_scanned_on ?? null };
     m.set(r.page_id, cur);
   }
   return m;

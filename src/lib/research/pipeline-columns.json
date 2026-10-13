@@ -6,6 +6,12 @@
   "w": 240
  },
  {
+  "key": "tt_video_url",
+  "label": "Video TikTok (rê chuột để phát)",
+  "type": "url",
+  "w": 180
+ },
+ {
   "key": "diem_tiem_nang",
   "label": "Điểm tiềm năng (0–9)",
   "type": "int",
@@ -27,14 +33,15 @@
   "key": "reason",
   "label": "Lý do",
   "type": "text",
-  "w": 200,
-  "maxw": 200
+  "w": 460,
+  "maxw": 460
  },
  {
   "key": "target_dtc_price",
-  "label": "Giá bán DTC mục tiêu [ước tính]",
+  "label": "Giá bán DTC mục tiêu",
   "type": "text",
-  "w": 120
+  "w": 70,
+  "maxw": 70
  },
  {
   "key": "quotes",
@@ -199,12 +206,6 @@
   "label": "TikTok US: SKU top",
   "type": "text",
   "w": 260
- },
- {
-  "key": "tt_video_url",
-  "label": "TikTok: video nổi bật",
-  "type": "url",
-  "w": 160
  },
  {
   "key": "tt_views",

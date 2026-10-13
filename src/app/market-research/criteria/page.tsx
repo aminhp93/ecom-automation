@@ -22,6 +22,17 @@ export default async function CriteriaPage() {
         <CopyCommand label="Đề xuất phiên bản tiêu chí mới" command="/dropship-research criteria review" />
       </section>
 
+      <section className="mt-5 border border-zinc-200 rounded-lg bg-white p-4 max-w-3xl">
+        <h2 className="text-sm font-semibold text-zinc-900">Market research để làm gì</h2>
+        <p className="text-xs text-zinc-600 mt-1">Giúp chọn đúng một sản phẩm đáng bán và chứng minh được vì sao, trước khi bỏ tiền dựng store, làm video hay chạy ads. Mọi tiêu chí bên dưới nhằm trả lời bốn câu hỏi này:</p>
+        <ol className="mt-3 space-y-2 text-xs text-zinc-700 list-decimal pl-5">
+          <li><span className="font-medium text-zinc-900">Có người mua không?</span> Nhu cầu tìm kiếm, lượt mua, xu hướng ở AU trước, rồi US/UK.</li>
+          <li><span className="font-medium text-zinc-900">Có ai đang bán được không?</span> Đối thủ chạy bao nhiêu ad, chạy bao lâu (nhiều ad nghĩa là bán được; ad chạy hơn 1 năm nghĩa là thị trường bền).</li>
+          <li><span className="font-medium text-zinc-900">Mình làm được và có lời không?</span> Giá vốn, ship, giá bán, margin, rào cản với sàn, rủi ro pháp lý và quảng cáo.</li>
+          <li><span className="font-medium text-zinc-900">Có đủ sức làm một mình không?</span> Hàng nặng hay nhẹ, có size hay không, có dễ quay video không.</li>
+        </ol>
+      </section>
+
       {[...versions].sort((a, b) => Number(b.is_current) - Number(a.is_current)).map((v) => {
         const rows = criteria.filter((c) => c.version === v.version);
         const active = rows.filter((c) => c.status !== 'retired');
