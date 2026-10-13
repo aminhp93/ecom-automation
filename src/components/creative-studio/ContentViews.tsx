@@ -180,6 +180,7 @@ export function ContentDetail({ c, data, back, reload, goPost }: { c: Content; d
         <p><span className="text-zinc-500">Hook / caption trên hình:</span> {c.script?.caption ?? c.hook ?? '—'}</p>
         <p><span className="text-zinc-500">Độ dài:</span> {c.length ?? '—'} · <span className="text-zinc-500">Giọng:</span> {c.voice ?? '—'} · <span className="text-zinc-500">Nhạc:</span> {c.music ?? '—'}</p>
         <p><span className="text-zinc-500">Tư liệu:</span> {c.sourcesNote ?? c.scenes ?? '—'}</p>
+        {c.promptDoc && <p><span className="text-zinc-500">Google Flow:</span> <a href={`/api/creative-studio/file?path=${encodeURIComponent(c.promptDoc)}`} target="_blank" rel="noreferrer" className="font-medium text-violet-700 underline">Mở workflow và 3 prompt tạo mới ↗</a></p>}
         {c.script?.beats && (
           <div className="pt-1"><div className="text-zinc-500">Kịch bản (nhịp):</div>{c.script.beats.map((b) => <p key={b.sec} className="pl-2">{b.sec} s: {b.desc}</p>)}</div>
         )}

@@ -6,6 +6,7 @@ import { Compass } from 'lucide-react';
 
 // 3 tab: Bảng tổng hợp (mọi sản phẩm, một chỗ) để làm việc → Theo dõi đối thủ (số ad, social, nội dung hằng ngày, từ 10/10) → Cơ sở đánh giá để tra cứu. (Tab Tổng quan đã bỏ 10/10; /market-research chuyển thẳng sang Bảng tổng hợp.)
 const TABS = [
+  { href: '/market-research/operations', label: 'Vận hành', match: (p: string) => p.startsWith('/market-research/operations') },
   {
     href: '/market-research/pipeline',
     label: 'Bảng tổng hợp',

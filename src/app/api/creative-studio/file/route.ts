@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 // Phát file video/ảnh từ ../video-drafts (chỉ đọc, có Range để tua video). Chặn đường dẫn ra ngoài thư mục.
 const ROOT = path.resolve(process.cwd(), '..', 'video-drafts');
-const TYPES: Record<string, string> = { '.mp4': 'video/mp4', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg' };
+const TYPES: Record<string, string> = { '.mp4': 'video/mp4', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.md': 'text/markdown; charset=utf-8' };
 
 export async function GET(request: Request) {
   const rel = new URL(request.url).searchParams.get('path') ?? '';

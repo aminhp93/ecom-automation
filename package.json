@@ -7,7 +7,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --test tests/workflow.test.cjs"
+    "test": "node --test tests/workflow.test.cjs",
+    "research:preview": "node --env-file=.env.local scripts/research/monitor.mjs --preview",
+    "research:once": "node --env-file=.env.local scripts/research/monitor.mjs --once",
+    "research:worker": "node --env-file=.env.local scripts/research/monitor.mjs --watch",
+    "test:research-monitor": "node --test tests/research-monitor.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.21.0",

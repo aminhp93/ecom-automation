@@ -15,7 +15,8 @@ export interface SceneFlowItem {
 export interface Content {
   id: string; folder: string; type: string; title: string; angle?: string; hook?: string; status: string; length?: string; music?: string; voice?: string;
   scenes?: string; sourcesNote?: string; reviewer?: string; updatedAt?: string;
-  anchors?: Anchor[]; sourceVideos?: SourceVideo[]; sceneFlow?: SceneFlowItem[];
+  promptDoc?: string;
+  anchors?: Anchor[]; sourceVideos?: SourceVideo[]; attemptVideos?: SourceVideo[]; sceneFlow?: SceneFlowItem[];
   script?: { caption?: string; beats?: { sec: string; desc: string }[] };
   checks?: Record<string, Check>; publishBlockers?: string[]; reviews?: Review[]; approved?: { file: string; by: string; at: string } | null;
   versionNotes?: Record<string, string>; versions: Version[]; latestFile: string | null; eligibility: string[];

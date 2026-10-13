@@ -9,11 +9,22 @@ const seconds = (n: number) => `${n.toFixed(1).replace('.', ',')}s`;
 export function SceneFlow({ content }: { content: Content }) {
   const anchors = content.anchors ?? [];
   const sourceVideos = content.sourceVideos ?? [];
+  const attemptVideos = content.attemptVideos ?? [];
   const scenes = content.sceneFlow ?? [];
-  if (!anchors.length && !scenes.length && !sourceVideos.length) return null;
+  if (!anchors.length && !scenes.length && !sourceVideos.length && !attemptVideos.length) return null;
 
   return (
     <section className="space-y-4" aria-label="Flow cảnh và ảnh neo">
+      {attemptVideos.length > 0 && <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-4">
+        <h3 className="text-sm font-semibold text-zinc-900">Lần tạo đầu · cần sửa</h3>
+        <p className="mt-1 text-[11px] text-zinc-600">Ba clip Flow đã sinh, lưu để so sánh với prompt sửa. Chưa có clip nào là bản được duyệt.</p>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {attemptVideos.map((attempt) => <figure key={attempt.id} className="rounded-lg border border-amber-200 bg-white p-2">
+            <video src={mediaUrl(attempt.path)} controls muted playsInline preload="metadata" aria-label={attempt.title} className="mx-auto aspect-[9/16] max-h-[440px] w-full rounded bg-black object-contain" />
+            <figcaption className="mt-2 text-[11px] leading-relaxed"><p className="font-medium text-zinc-900">{attempt.title}</p><p className="text-zinc-600">{attempt.note}</p></figcaption>
+          </figure>)}
+        </div>
+      </div>}
       {sourceVideos.length > 0 && <div className="rounded-lg border border-zinc-200 bg-white p-4">
         <div className="mb-3">
           <h3 className="text-sm font-semibold text-zinc-900">Input · video nguồn đầy đủ</h3>
