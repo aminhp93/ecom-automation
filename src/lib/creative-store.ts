@@ -1,9 +1,11 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-// Kho creative lưu bằng file JSON trong ../video-drafts (không dùng DB). Chỉ ghi qua các hàm ở đây.
-export const ROOT = path.join(process.cwd(), '..', 'video-drafts');
-export const BRAND_DIR = path.join(ROOT, 'brand-noctanest');
+import { projectDir, publishingDir, WORKSPACE_ROOT } from './workspace-paths';
+
+// Working artifacts are project-scoped. Canonical research/knowledge remain external.
+export const ROOT = WORKSPACE_ROOT;
+export const BRAND_DIR = publishingDir('blackout-curtains');
 export const ID_RE = /^[a-z0-9-]+$/;
 
 export async function readJson<T = any>(p: string): Promise<T | null> {
@@ -20,8 +22,8 @@ export async function writeJson(p: string, data: unknown) {
   await fs.rename(tmp, p);
 }
 
-export const productDir = (product: string) => path.join(ROOT, product);
-export const videoDir = (product: string, video: string) => path.join(ROOT, product, video);
+export const productDir = (product: string) => path.join(projectDir(product), 'creative');
+export const videoDir = (product: string, video: string) => path.join(productDir(product), video);
 
 export const CHECK_KEYS = ['character', 'room', 'product', 'claim', 'audio', 'rights'] as const;
 export type CheckKey = (typeof CHECK_KEYS)[number];

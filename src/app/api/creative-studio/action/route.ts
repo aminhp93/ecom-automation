@@ -1,3 +1,4 @@
+import { publishingDir } from '@/lib/workspace-paths';
 import path from 'node:path';
 import { promises as fs } from 'node:fs';
 import { z } from 'zod';
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
       return Response.json({ ok: true });
     }
     if (input.action === 'post-save' || input.action === 'post-delete') {
-      const file = path.join(productDir(input.product), 'posts.json');
+      const file = path.join(publishingDir(input.product), 'posts.json');
       const data = (await readJson(file)) ?? { posts: [] };
       if (input.action === 'post-delete') {
         data.posts = data.posts.filter((p: any) => p.id !== input.id);

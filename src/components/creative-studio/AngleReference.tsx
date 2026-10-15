@@ -46,7 +46,7 @@ export function ReferenceView({ reference }: { reference: Reference | null }) {
       <div className="bg-white border border-zinc-200 rounded-lg p-4 overflow-x-auto">
         <div className="font-medium text-zinc-900 mb-2">10 Reel đã tải và phân tích</div>
         <table className="w-full min-w-[850px]"><thead><tr className="text-left text-zinc-500"><th className="pr-2">#</th><th className="pr-2">Hook</th><th className="pr-2">Angle</th><th className="pr-2">Âm thanh</th><th className="pr-2">Dài</th><th>Nguồn để kiểm tra</th></tr></thead>
-          <tbody>{reference.reels.map((r) => <tr key={r.n} className="border-t border-zinc-100 align-top"><td className="pr-2">{r.n}</td><td className="pr-2">{r.hook}</td><td className="pr-2 text-zinc-600">{r.angle}</td><td className="pr-2">{r.audio}</td><td className="pr-2">{r.seconds} s</td><td className="space-x-2">{r.file && <a href={`/api/creative-studio/file?path=${encodeURIComponent(`blackout-curtains/reference/guard-blinds/${r.file}`)}`} target="_blank" rel="noreferrer" className="text-blue-700 underline">Xem bản lưu</a>}{r.url ? <a href={r.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">Mở Reel gốc</a> : <span className="text-zinc-400">URL gốc chưa đối chiếu</span>}</td></tr>)}</tbody></table>
+          <tbody>{reference.reels.map((r) => <tr key={r.n} className="border-t border-zinc-100 align-top"><td className="pr-2">{r.n}</td><td className="pr-2">{r.hook}</td><td className="pr-2 text-zinc-600">{r.angle}</td><td className="pr-2">{r.audio}</td><td className="pr-2">{r.seconds} s</td><td className="space-x-2">{r.file && <a href={`/api/creative-studio/file?path=${encodeURIComponent(`reference/blackout/guard-blinds/${r.file}`)}`} target="_blank" rel="noreferrer" className="text-blue-700 underline">Xem bản lưu</a>}{r.url ? <a href={r.url} target="_blank" rel="noreferrer" className="text-blue-700 underline">Mở Reel gốc</a> : <span className="text-zinc-400">URL gốc chưa đối chiếu</span>}</td></tr>)}</tbody></table>
       </div>
       {!!reference.publicReels?.length && <div className="bg-white border border-zinc-200 rounded-lg p-4 overflow-x-auto">
         <div className="font-medium text-zinc-900 mb-1">Reel công khai đã ghi link</div>
@@ -59,7 +59,7 @@ export function ReferenceView({ reference }: { reference: Reference | null }) {
         <table className="w-full min-w-[600px]"><thead><tr className="text-left text-zinc-500"><th className="pr-2">Library ID</th><th className="pr-2">Chạy từ</th><th className="pr-2">Dài</th><th className="pr-2">Cảnh</th><th>Ghi chú</th></tr></thead>
           <tbody>{reference.ads.map((a) => <tr key={a.id} className="border-t border-zinc-100"><td className="pr-2 font-mono">{a.id}</td><td className="pr-2">{a.start}</td><td className="pr-2">{a.seconds} s</td><td className="pr-2">{a.scenes}</td><td>{a.note}</td></tr>)}</tbody></table>
       </div>
-      <div className="bg-white border border-zinc-200 rounded-lg p-4 space-y-1"><div className="font-medium text-zinc-900 mb-1">Tài liệu phân tích</div>{reference.docs.map((d) => <p key={d.path} className="text-zinc-700">{d.label} <span className="font-mono text-[10px] text-zinc-400">video-drafts/{d.path}</span></p>)}</div>
+      <div className="bg-white border border-zinc-200 rounded-lg p-4 space-y-1"><div className="font-medium text-zinc-900 mb-1">Tài liệu phân tích</div>{reference.docs.map((d) => <p key={d.path} className="text-zinc-700">{d.label} <span className="font-mono text-[10px] text-zinc-400">{d.path}</span></p>)}</div>
     </div>
   );
 }

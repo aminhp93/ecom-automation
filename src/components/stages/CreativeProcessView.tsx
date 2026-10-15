@@ -195,7 +195,7 @@ export function CreativeProcessView() {
         </ul>
       </div>
 
-      <p className="text-[11px] text-zinc-400">Cập nhật {flow.updated}. Dữ liệu đọc từ video-drafts/blackout-curtains/video-1/2-instruction/flow-status.json, agent cập nhật cuối mỗi phiên làm video.</p>
+      <p className="text-[11px] text-zinc-400">Cập nhật {flow.updated}. Dữ liệu đọc từ workspace/noctanest/creative/video-1/2-instruction/flow-status.json, agent cập nhật cuối mỗi phiên làm video.</p>
     </div>
   );
 }

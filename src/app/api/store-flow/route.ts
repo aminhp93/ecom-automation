@@ -4,11 +4,9 @@ import path from 'node:path';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Trạng thái setup store nằm ở ../store-drafts/ (agent Store cập nhật mỗi phiên); trang /store-setup chỉ đọc và hiển thị.
-// - duskly: ../store-drafts/blackout-curtains/store-status.json (store chính, có tiến độ)
-// - guard, halo: ../store-drafts/benchmarks/<id>.json (store tham khảo, chỉ so với checklist của mình)
-const ROOT = path.join(process.cwd(), '..', 'store-drafts');
-const MAIN = path.join(ROOT, 'blackout-curtains', 'store-status.json');
+const ROOT = path.join(process.cwd(), '..', 'workspace', 'noctanest', 'store');
+const MAIN = path.join(ROOT, 'store-status.json');
+const BENCHMARK_ROOT = path.join(process.cwd(), '..', 'reference', 'blackout', 'store-benchmarks');
 const BENCHMARKS = ['guard', 'halo'];
 
 export async function GET(request: Request) {
@@ -17,7 +15,7 @@ export async function GET(request: Request) {
     const main = JSON.parse(await fs.readFile(MAIN, 'utf8'));
     if (store === 'duskly') return Response.json({ store, status: main });
     if (!BENCHMARKS.includes(store)) return Response.json({ error: 'Store không hợp lệ.' }, { status: 400 });
-    const benchmark = JSON.parse(await fs.readFile(path.join(ROOT, 'benchmarks', `${store}.json`), 'utf8'));
+    const benchmark = JSON.parse(await fs.readFile(path.join(BENCHMARK_ROOT, `${store}.json`), 'utf8'));
     // Checklist của mình làm khung để so sánh (chỉ lấy tên nhóm và việc, không lấy tiến độ).
     const checklist = main.groups.map((g: { id: string; name: string; items: { id: string; label: string }[] }) => ({
       id: g.id,

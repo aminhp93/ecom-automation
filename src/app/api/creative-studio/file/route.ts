@@ -1,3 +1,4 @@
+import { mediaPath, WORKSPACE_ROOT, REFERENCE_ROOT } from '@/lib/workspace-paths';
 import { createReadStream, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { Readable } from 'node:stream';
@@ -5,18 +6,23 @@ import { Readable } from 'node:stream';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-// Phát file video/ảnh từ ../video-drafts (chỉ đọc, có Range để tua video). Chặn đường dẫn ra ngoài thư mục.
-const ROOT = path.resolve(process.cwd(), '..', 'video-drafts');
-const TYPES: Record<string, string> = { '.mp4': 'video/mp4', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.md': 'text/markdown; charset=utf-8' };
+// Read-only project/reference media with Range support. Resolve real paths to reject symlink escapes.
+const TYPES: Record<string, string> = { '.mp4': 'video/mp4', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.md': 'text/markdown; charset=utf-8', '.webp': 'image/webp' };
 
 export async function GET(request: Request) {
   const rel = new URL(request.url).searchParams.get('path') ?? '';
-  const full = path.resolve(ROOT, rel);
+  const full = mediaPath(rel);
+  if (!full) return new Response('Không hợp lệ', { status: 400 });
   const type = TYPES[path.extname(full).toLowerCase()];
-  if (!full.startsWith(ROOT + path.sep) || !type) return new Response('Không hợp lệ', { status: 400 });
+  if (!type) return new Response('Không hợp lệ', { status: 400 });
   let size: number;
   try {
-    size = (await fs.stat(full)).size;
+    const real = await fs.realpath(full);
+    const roots = await Promise.all([WORKSPACE_ROOT, REFERENCE_ROOT].map((root) => fs.realpath(root)));
+    if (!roots.some((root) => real.startsWith(root + path.sep))) return new Response('Không hợp lệ', { status: 400 });
+    const stat = await fs.stat(real);
+    if (!stat.isFile()) return new Response('Không hợp lệ', { status: 400 });
+    size = stat.size;
   } catch {
     return new Response('Không thấy file', { status: 404 });
   }

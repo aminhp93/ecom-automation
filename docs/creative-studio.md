@@ -1,41 +1,19 @@
-# Creative Studio (Step 6)
+# Creative Studio — workspace storage (15/10/2026)
 
-Open `/creative` directly or choose `06 Creative Studio` in the dashboard.
-Replaces the previous angle / AI image-video generation / storefront UI in Step 6.
-Existing historical creative packs and generation endpoints are retained.
+UI: `/creative-studio`; store preview `/store-setup`. This is the application's storage contract, not the canonical creative playbook.
 
-## Workflow
+Business artifacts live outside the application repo:
 
-1. Add local MP4/MOV/WebM videos to the library.
-2. Choose a 19-second, 30-second, or freeform storyboard.
-3. Select a scene and attach a library clip, or use Replace to upload a different clip.
-4. Set the source start and scene duration, role, audio mute, order, output ratio and fit.
-5. Preview sequentially, then render MP4. The exported result has a separate player and download action.
+- `../workspace/noctanest/project.json`: project identity and canonical-system links.
+- `../workspace/noctanest/creative/angles.json`, `video-N/video.json`, and each video's input/instruction/output folders.
+- `../workspace/noctanest/publishing/channels.json` and `posts.json`: brand channels and per-platform posts.
+- `../workspace/noctanest/store/store-status.json`: store checklist.
+- `../reference/blackout/reference.json`, competitor media and `store-benchmarks/`: shared references only.
 
-Replacing footage preserves the scene duration and resets the source start to zero.
-A short clip is flagged, never silently stretched, looped or truncated to fit.
-The browser sequence preview can pause between clips; exported MP4 is concatenated.
-Exports: H.264/AAC, 30fps, 720×1280 / 720×720 / 1280×720, up to 180 seconds and 60 scenes.
-Library/upload limit: 300 MB. Rendering is limited to one concurrent request per server process.
+`src/lib/workspace-paths.ts` maps legacy product id blackout-curtains to project noctanest. Other product IDs resolve to their own workspace directory; they never inherit Noctanest channels. GET `/api/creative-studio` reads working artifacts. POST `/api/creative-studio/action` writes reviews, selected approvals, posts and angle decisions within the selected project. It never publishes or sends messages.
 
-## Storage and runtime
+GET `/api/creative-studio/file?path=...` serves only supported file types in workspace/reference, with Range. Metadata paths are relative to the dropship root. Legacy `blackout-curtains/video-N/...`, `blackout-curtains/reference/...` and `video-drafts/...` URLs are translated. Lexical traversal and realpath/symlink escapes are rejected. No data is duplicated in the application.
 
-The editor holds source files in browser memory. Save/Open downloads/imports a JSON storyboard.
-Reloading requires the original video files; matching name + size + last-modified reattaches automatically.
-If originals have changed, attach them explicitly. No database or Supabase writes are performed.
-Rendering uses an OS temporary directory, removed on success or failure. No media is added to the repository.
-Keep the page open during rendering. Save the storyboard and download the MP4 before leaving.
-This version does not composite text overlays or a separate music/voiceover track.
+Version ordering is display order, not automatic approval. Each video.json retains its selected approval and review blockers. Existing publish eligibility checks remain in force.
 
-The Node server needs `ffmpeg` and `ffprobe` on PATH, or absolute executable paths in
-`FFMPEG_PATH` and `FFPROBE_PATH`. Deployment must support native processes and sufficient render time.
-The supplied localhost environment has both binaries. No cloud render service is used.
-
-## Verification
-
-- `node --test tests/creative-storyboard.test.cjs`
-- `node --test tests/creative-render.integration.cjs` (app running at localhost:3000, override with CREATIVE_TEST_URL)
-- `npx tsc --noEmit`
-
-Integration test verifies exported scene order, normalized size/rate, preserved audio, muted scenes,
-footage without audio, invalid/missing clip rejection, and cross-origin rejection.
+The old `/creative` SceneBuilder UI documentation no longer describes the active Creative Studio. Historical layout/workflow drafts are in `../archive/2026-10-15/`. Canonical knowledge stays Confluence; research/results Supabase; canonical media Drive; code Git; tasks Jira.

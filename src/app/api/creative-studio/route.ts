@@ -1,6 +1,7 @@
+import { referenceDir, publishingDir } from '@/lib/workspace-paths';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { BRAND_DIR, ID_RE, eligibilityReasons, productDir, readJson, versionOf } from '@/lib/creative-store';
+import { ID_RE, eligibilityReasons, productDir, readJson, versionOf } from '@/lib/creative-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,9 +13,9 @@ export async function GET(request: Request) {
   const base = productDir(product);
   try {
     const angles = (await readJson(path.join(base, 'angles.json'))) ?? { angles: [] };
-    const reference = await readJson(path.join(base, 'reference', 'reference.json'));
-    const posts = (await readJson(path.join(base, 'posts.json')))?.posts ?? [];
-    const channels = await readJson(path.join(BRAND_DIR, 'channels.json'));
+    const reference = await readJson(path.join(referenceDir(product), 'reference.json'));
+    const posts = (await readJson(path.join(publishingDir(product), 'posts.json')))?.posts ?? [];
+    const channels = await readJson(path.join(publishingDir(product), 'channels.json'));
     const entries = await fs.readdir(base, { withFileTypes: true });
     const contents = [];
     for (const e of entries) {
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
             variant: v?.suffix ?? '',
             mtime: st.mtimeMs,
             size: st.size,
-            url: `/api/creative-studio/file?path=${encodeURIComponent(`${product}/${e.name}/3-output/videos/${f}`)}`,
+            url: `/api/creative-studio/file?path=${encodeURIComponent(`workspace/${product === 'blackout-curtains' ? 'noctanest' : product}/creative/${e.name}/3-output/videos/${f}`)}`,
           };
         }),
       );
